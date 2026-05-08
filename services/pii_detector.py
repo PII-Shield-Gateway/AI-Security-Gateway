@@ -487,7 +487,7 @@ def process_pii(text: str, use_openai_privacy_filter=True):
 
     if use_openai_privacy_filter:
         opf_result, opf_error = _load_openai_privacy_filter(original_text)
-        if opf_result:
+        if opf_result is not None:
             opf_detections = _normalize_opf_detections(opf_result)
             filter_engine = "openai_privacy_filter+regex_hybrid"
         elif opf_error is not None:
@@ -506,4 +506,3 @@ def process_pii(text: str, use_openai_privacy_filter=True):
         "detections": combined_detections,
         "filter_engine": filter_engine,
     }
-
