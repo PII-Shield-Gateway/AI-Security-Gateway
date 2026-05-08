@@ -4,6 +4,7 @@ import Header from "./components/Header";
 import SecurityFlow from "./components/SecurityFlow";
 import OriginalDocumentPanel from "./components/OriginalDocumentPanel";
 import MaskedDocumentPanel from "./components/MaskedDocumentPanel";
+import DetectionTable from "./components/DetectionTable";
 import SummaryCards from "./components/SummaryCards";
 import sampleDocuments from "./data/sampleDocuments";
 
@@ -160,6 +161,7 @@ function App() {
           transferStatus={transferStatus}
           filterEngine={filterEngine}
         />
+        <DetectionTable detections={detections} />
       </div>
     </main>
   );
