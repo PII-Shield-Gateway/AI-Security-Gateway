@@ -18,7 +18,7 @@ function OriginalDocumentPanel({
           내부 원본 자료
         </h2>
         <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
-          이 자료는 외부 API로 직접 전송되지 않습니다.
+          이 자료는 외부 AI API로 직접 전송되지 않습니다.
         </p>
       </div>
 
@@ -49,41 +49,15 @@ function OriginalDocumentPanel({
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => onSampleClick("customer")}
-          className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors duration-200 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-        >
-          고객 상담 기록
-        </button>
-        <button
-          type="button"
-          onClick={() => onSampleClick("meeting")}
-          className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors duration-200 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-        >
-          회의록
-        </button>
-        <button
-          type="button"
-          onClick={() => onSampleClick("contract")}
-          className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors duration-200 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-        >
-          계약 검토 메모
-        </button>
-        <button
-          type="button"
-          onClick={() => onSampleClick("code")}
-          className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors duration-200 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-        >
-          코드/API Key 예시
-        </button>
+        <PresetButton label="고객 상담 기록" onClick={() => onSampleClick("customer")} />
+        <PresetButton label="회의록" onClick={() => onSampleClick("meeting")} />
+        <PresetButton label="계약 검토 메모" onClick={() => onSampleClick("contract")} />
+        <PresetButton label="코드/API Key 예시" onClick={() => onSampleClick("code")} />
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <label className="flex cursor-pointer flex-col gap-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600 transition-colors duration-200 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800/60">
-          <span className="font-medium text-slate-700 dark:text-slate-200">
-            TXT 파일 업로드
-          </span>
+          <span className="font-medium text-slate-700 dark:text-slate-200">TXT 파일 업로드</span>
           <span>TXT 파일만 업로드할 수 있습니다.</span>
           <input
             type="file"
@@ -116,9 +90,21 @@ function OriginalDocumentPanel({
         className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-sm ring-1 ring-rose-500/10 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200"
         role={errorMessage ? "alert" : undefined}
       >
-        {errorMessage || "오류 메시지가 여기에 표시됩니다."}
+        {errorMessage || "오류 메시지가 이곳에 표시됩니다."}
       </div>
     </section>
+  );
+}
+
+function PresetButton({ label, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors duration-200 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+    >
+      {label}
+    </button>
   );
 }
 

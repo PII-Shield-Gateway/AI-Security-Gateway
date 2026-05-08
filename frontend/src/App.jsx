@@ -61,6 +61,21 @@ function App() {
     window.localStorage.setItem(THEME_STORAGE_KEY, "light");
   }, [isDarkMode]);
 
+  function resetAnalysisState() {
+    setMaskedText("");
+    setDetectedPii([]);
+    setDetections([]);
+    setRiskLevel("NONE");
+    setFilterEngine("READY");
+    setExternalApiResponse(INITIAL_EXTERNAL_API_RESPONSE);
+    setTransferStatus("WAITING");
+    setGatewayStatus("READY");
+    setSavedFile(null);
+    setLogSaved(false);
+    setErrorMessage("");
+    setIsLoading(false);
+  }
+
   function handleSampleClick(sampleKey) {
     setSourceText(sampleDocuments[sampleKey] ?? "");
     setErrorMessage("");
@@ -100,18 +115,7 @@ function App() {
 
   function handleReset() {
     setSourceText("");
-    setMaskedText("");
-    setDetectedPii([]);
-    setDetections([]);
-    setRiskLevel("NONE");
-    setFilterEngine("READY");
-    setExternalApiResponse(INITIAL_EXTERNAL_API_RESPONSE);
-    setTransferStatus("WAITING");
-    setGatewayStatus("READY");
-    setSavedFile(null);
-    setLogSaved(false);
-    setErrorMessage("");
-    setIsLoading(false);
+    resetAnalysisState();
   }
 
   async function handleRunCheck() {
@@ -131,10 +135,7 @@ function App() {
       setDetections(Array.isArray(result.detections) ? result.detections : []);
       setRiskLevel(result.risk_level ?? "NONE");
       setFilterEngine(result.filter_engine ?? "READY");
-      setExternalApiResponse(
-        result.external_api_response ??
-          "보안 검사 후 외부 AI API 응답이 표시됩니다."
-      );
+      setExternalApiResponse(result.external_api_response ?? INITIAL_EXTERNAL_API_RESPONSE);
       setSavedFile(result.saved_file ?? null);
       setLogSaved(Boolean(result.log_saved));
       setTransferStatus("READY");
@@ -163,13 +164,13 @@ function App() {
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-6 text-slate-900 transition-colors duration-200 dark:bg-slate-950 dark:text-slate-100 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
+      <div className="mx-auto max-w-7xl space-y-6">
         <Header
           isDarkMode={isDarkMode}
           onToggleDarkMode={() => setIsDarkMode((current) => !current)}
         />
         <SecurityFlow />
-        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <OriginalDocumentPanel
             sourceText={sourceText}
             onSourceTextChange={handleSourceTextChange}
