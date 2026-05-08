@@ -479,6 +479,29 @@ def _normalize_opf_detections(opf_result):
     return normalized
 
 
+def refine_detection_type_by_context(text: str, detection: dict) -> dict:
+    refined = dict(detection)
+    if refined.get("type") != "ACCOUNT":
+        return refined
+
+    start = int(refined.get("start", 0))
+    prefix = text[max(0, start - 24) : start]
+    lowered_prefix = prefix.lower()
+
+    secret_keywords = ("비밀번호", "비번", "패스워드", "password", "pw")
+    phone_keywords = ("전화", "전화번호", "연락처", "휴대폰", "핸드폰", "번호")
+
+    if any(keyword in lowered_prefix for keyword in secret_keywords):
+        refined["type"] = "SECRET"
+        return refined
+
+    if any(keyword in prefix for keyword in phone_keywords):
+        refined["type"] = "PHONE"
+        return refined
+
+    return refined
+
+
 def process_pii(text: str, use_openai_privacy_filter=True):
     original_text = text or ""
     regex_detections = detect_regex_pii(original_text)
@@ -493,7 +516,11 @@ def process_pii(text: str, use_openai_privacy_filter=True):
         elif opf_error is not None:
             filter_engine = "regex_fallback"
 
-    combined_detections = remove_overlaps(opf_detections + regex_detections)
+    refined_detections = [
+        refine_detection_type_by_context(original_text, detection)
+        for detection in (opf_detections + regex_detections)
+    ]
+    combined_detections = remove_overlaps(refined_detections)
     masked_text = mask_text(original_text, combined_detections)
     detected_pii = _unique_types_in_order(combined_detections)
     risk_level = _calculate_risk_level(detected_pii)
