@@ -131,6 +131,18 @@ function App() {
     }
   }
 
+  function handleSendExternal() {
+    if (!maskedText) {
+      setErrorMessage("먼저 보안 검사를 실행하세요.");
+      return;
+    }
+
+    setErrorMessage("");
+    setTransferStatus("SENT");
+    setGatewayStatus("SENT");
+    setExternalApiResponse("외부 AI API에는 비식별화된 자료만 전송되었습니다.");
+  }
+
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-6 text-slate-900 transition-colors duration-200 dark:bg-slate-950 dark:text-slate-100 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
@@ -152,8 +164,9 @@ function App() {
           <MaskedDocumentPanel
             maskedText={maskedText}
             transferStatus={transferStatus}
-            savedFile={savedFile}
+            onSendExternal={handleSendExternal}
             canSend={Boolean(maskedText)}
+            savedFile={savedFile}
           />
         </div>
         <SummaryCards
