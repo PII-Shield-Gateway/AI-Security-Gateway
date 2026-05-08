@@ -3,11 +3,12 @@ function MaskedDocumentPanel({
   transferStatus = "WAITING",
   onSendExternal = () => {},
   canSend = false,
-  savedFile = null,
-  saveResult = false,
   outputFormat = "txt",
-  onSaveResultChange = () => {},
   onOutputFormatChange = () => {},
+  onSaveFilteredFile = () => {},
+  isSaving = false,
+  savedFile = null,
+  saveMessage = "",
 }) {
   const statusLabel =
     transferStatus === "SENT"
@@ -26,7 +27,7 @@ function MaskedDocumentPanel({
           비식별화 자료
         </h2>
         <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
-          외부 AI API에는 이 자료만 전송됩니다.
+          외부 AI API로는 비식별화된 자료만 전송합니다.
         </p>
       </div>
 
@@ -55,40 +56,43 @@ function MaskedDocumentPanel({
           )}
         </div>
         <pre className="mt-3 min-h-56 whitespace-pre-wrap break-words rounded-2xl bg-white p-4 text-sm leading-6 text-slate-900 shadow-sm ring-1 ring-slate-200/60 dark:bg-slate-900 dark:text-slate-100 dark:ring-slate-800">
-          {maskedText || "보안 검사 실행 후 비식별화된 자료가 표시됩니다."}
+          {maskedText || "보안 검사를 실행하면 비식별화된 자료가 표시됩니다."}
         </pre>
       </div>
 
       <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm ring-1 ring-slate-200/60 dark:border-slate-700 dark:bg-slate-950 dark:ring-slate-700/60">
-        <label className="flex items-center gap-3 text-sm font-medium text-slate-700 dark:text-slate-200">
-          <input
-            type="checkbox"
-            checked={saveResult}
-            onChange={(event) => onSaveResultChange(event.target.checked)}
-            className="h-4 w-4 rounded border-slate-300 accent-blue-600"
-          />
-          필터링 결과 파일로 저장
-        </label>
-
-        <div
-          className={`mt-4 flex flex-wrap items-center gap-3 ${
-            saveResult ? "" : "opacity-50"
-          }`}
-        >
-          <span className="text-sm text-slate-600 dark:text-slate-300">
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
             저장 형식
-          </span>
+          </label>
           <select
             value={outputFormat}
             onChange={(event) => onOutputFormatChange(event.target.value)}
-            disabled={!saveResult}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm ring-1 ring-slate-200/60 transition-colors duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:cursor-not-allowed dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:ring-slate-700/60"
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm ring-1 ring-slate-200/60 transition-colors duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:ring-slate-700/60"
           >
             <option value="txt">TXT</option>
             <option value="json">JSON</option>
           </select>
+          <button
+            type="button"
+            onClick={onSaveFilteredFile}
+            disabled={!maskedText || isSaving}
+            className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-700"
+          >
+            {isSaving ? "저장 중..." : "필터링 결과 저장"}
+          </button>
         </div>
       </div>
+
+      {savedFile?.saved_file ? (
+        <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 ring-1 ring-emerald-500/10 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300">
+          <div className="font-semibold">저장 완료</div>
+          {saveMessage ? <div className="mt-1">{saveMessage}</div> : null}
+          <div className="mt-1 font-medium">
+            {String(savedFile.format || outputFormat).toUpperCase()} · {savedFile.saved_file}
+          </div>
+        </div>
+      ) : null}
 
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <button
@@ -103,17 +107,6 @@ function MaskedDocumentPanel({
           마스킹 결과가 있을 때만 전송할 수 있습니다.
         </span>
       </div>
-
-      {savedFile?.saved_file ? (
-        <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 ring-1 ring-emerald-500/10 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200">
-          <div className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-300">
-            저장 완료
-          </div>
-          <div className="mt-1 font-medium">
-            {String(savedFile.format || "").toUpperCase()} · {savedFile.saved_file}
-          </div>
-        </div>
-      ) : null}
     </section>
   );
 }

@@ -4,6 +4,7 @@ function SecurityLog({
   externalApiResponse = "보안 검사 후 외부 AI API 응답이 표시됩니다.",
   filterEngine = "READY",
   savedFile = null,
+  saveMessage = "",
   logSaved = false,
 }) {
   return (
@@ -16,7 +17,7 @@ function SecurityLog({
           보안 처리 로그
         </h2>
         <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
-          원본 자료는 차단되고, 비식별화된 자료만 외부 AI API로 전달됩니다.
+          원본 자료는 차단하고, 비식별화된 자료만 외부 AI API로 전달합니다.
         </p>
       </div>
 
@@ -45,7 +46,7 @@ function SecurityLog({
           tone={logSaved ? "emerald" : "slate"}
         />
         <LogItem
-          label="파일 저장 여부"
+          label="저장 상태"
           value={savedFile?.saved_file ? "SAVED" : "NOT SAVED"}
           tone={savedFile?.saved_file ? "emerald" : "slate"}
         />
@@ -55,8 +56,14 @@ function SecurityLog({
           tone={savedFile?.saved_file ? "blue" : "slate"}
         />
         <LogItem
-          label="저장 파일 경로"
+          label="저장 경로"
           value={savedFile?.saved_file ?? "없음"}
+          tone={savedFile?.saved_file ? "emerald" : "slate"}
+          valueClassName="whitespace-pre-wrap break-words"
+        />
+        <LogItem
+          label="저장 메시지"
+          value={saveMessage || "-"}
           tone={savedFile?.saved_file ? "emerald" : "slate"}
           valueClassName="whitespace-pre-wrap break-words"
         />

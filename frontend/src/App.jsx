@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { filterText } from "./api/gatewayApi";
+import { filterText, saveFilteredText } from "./api/gatewayApi";
 import Header from "./components/Header";
 import SecurityFlow from "./components/SecurityFlow";
 import OriginalDocumentPanel from "./components/OriginalDocumentPanel";
@@ -41,11 +41,12 @@ function App() {
   const [externalApiResponse, setExternalApiResponse] = useState(
     INITIAL_EXTERNAL_API_RESPONSE
   );
-  const [saveResult, setSaveResult] = useState(false);
   const [outputFormat, setOutputFormat] = useState("txt");
   const [transferStatus, setTransferStatus] = useState("WAITING");
   const [gatewayStatus, setGatewayStatus] = useState("READY");
   const [savedFile, setSavedFile] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
   const [logSaved, setLogSaved] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -70,11 +71,12 @@ function App() {
     setRiskLevel("NONE");
     setFilterEngine("READY");
     setExternalApiResponse(INITIAL_EXTERNAL_API_RESPONSE);
-    setSaveResult(false);
     setOutputFormat("txt");
     setTransferStatus("WAITING");
     setGatewayStatus("READY");
     setSavedFile(null);
+    setIsSaving(false);
+    setSaveMessage("");
     setLogSaved(false);
     setErrorMessage("");
     setIsLoading(false);
@@ -82,11 +84,15 @@ function App() {
 
   function handleSampleClick(sampleKey) {
     setSourceText(sampleDocuments[sampleKey] ?? "");
+    setSavedFile(null);
+    setSaveMessage("");
     setErrorMessage("");
   }
 
   function handleSourceTextChange(value) {
     setSourceText(value);
+    setSavedFile(null);
+    setSaveMessage("");
     setErrorMessage("");
   }
 
@@ -101,7 +107,8 @@ function App() {
     const isTxtFile =
       file.name.toLowerCase().endsWith(".txt") || file.type === "text/plain";
     const isPdfFile =
-      file.name.toLowerCase().endsWith(".pdf") || file.type === "application/pdf";
+      file.name.toLowerCase().endsWith(".pdf") ||
+      file.type === "application/pdf";
     const isDocxFile =
       file.name.toLowerCase().endsWith(".docx") ||
       file.type ===
@@ -115,10 +122,12 @@ function App() {
     const reader = new FileReader();
     reader.onload = () => {
       setSourceText(typeof reader.result === "string" ? reader.result : "");
+      setSavedFile(null);
+      setSaveMessage("");
       setErrorMessage("");
     };
     reader.onerror = () => {
-      setErrorMessage("TXT 파일을 읽는 중 오류가 발생했습니다.");
+      setErrorMessage("파일을 읽는 중 오류가 발생했습니다.");
     };
     reader.readAsText(file);
   }
@@ -139,27 +148,55 @@ function App() {
     setGatewayStatus("SCANNING");
 
     try {
-      const result = await filterText(sourceText, {
-        save: saveResult,
-        outputFormat,
-      });
+      const result = await filterText(sourceText);
       setMaskedText(result.masked_text ?? "");
       setDetectedPii(Array.isArray(result.detected_pii) ? result.detected_pii : []);
       setDetections(Array.isArray(result.detections) ? result.detections : []);
       setRiskLevel(result.risk_level ?? "NONE");
       setFilterEngine(result.filter_engine ?? "READY");
-      setExternalApiResponse(result.external_api_response ?? INITIAL_EXTERNAL_API_RESPONSE);
-      setSavedFile(result.saved_file ?? null);
+      setExternalApiResponse(
+        result.external_api_response ?? INITIAL_EXTERNAL_API_RESPONSE
+      );
+      setSavedFile(null);
+      setSaveMessage("");
       setLogSaved(Boolean(result.log_saved));
       setTransferStatus("READY");
       setGatewayStatus("MASKED");
     } catch (error) {
       setGatewayStatus("ERROR");
       setErrorMessage(
-        "보안 검사 또는 파일 저장 중 오류가 발생했습니다. 백엔드 서버가 실행 중인지 확인하세요."
+        "보안 검사 중 오류가 발생했습니다. 백엔드 서버가 실행 중인지 확인하세요."
       );
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function handleSaveFilteredFile() {
+    if (!sourceText.trim()) {
+      setErrorMessage("저장할 원본 자료가 없습니다.");
+      return;
+    }
+
+    if (!maskedText.trim()) {
+      setErrorMessage("먼저 보안 검사를 실행하세요.");
+      return;
+    }
+
+    setErrorMessage("");
+    setIsSaving(true);
+
+    try {
+      const result = await saveFilteredText(sourceText, outputFormat);
+      setSavedFile(result.saved_file ?? null);
+      setSaveMessage("필터링 결과가 파일로 저장되었습니다.");
+      setLogSaved(Boolean(result.log_saved));
+    } catch (error) {
+      setErrorMessage(
+        "파일 저장 중 오류가 발생했습니다. 백엔드 서버가 실행 중인지 확인하세요."
+      );
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -172,7 +209,9 @@ function App() {
     setErrorMessage("");
     setTransferStatus("SENT");
     setGatewayStatus("SENT");
-    setExternalApiResponse("외부 AI API에는 비식별화된 자료만 전송되었습니다.");
+    setExternalApiResponse(
+      "외부 AI API에는 비식별화된 자료만 전송되었습니다."
+    );
   }
 
   return (
@@ -199,11 +238,12 @@ function App() {
             transferStatus={transferStatus}
             onSendExternal={handleSendExternal}
             canSend={Boolean(maskedText)}
-            savedFile={savedFile}
-            saveResult={saveResult}
             outputFormat={outputFormat}
-            onSaveResultChange={setSaveResult}
             onOutputFormatChange={setOutputFormat}
+            onSaveFilteredFile={handleSaveFilteredFile}
+            isSaving={isSaving}
+            savedFile={savedFile}
+            saveMessage={saveMessage}
           />
         </div>
         <SummaryCards
@@ -220,6 +260,7 @@ function App() {
           externalApiResponse={externalApiResponse}
           filterEngine={filterEngine}
           savedFile={savedFile}
+          saveMessage={saveMessage}
           logSaved={logSaved}
         />
       </div>
