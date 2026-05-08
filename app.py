@@ -7,11 +7,7 @@ from pathlib import Path
 from flask import Flask, jsonify, request
 
 from services.pii_detector import process_pii
-
-try:
-    from services.file_storage import save_filtered_output
-except Exception:  # pragma: no cover - storage is added in a later step
-    save_filtered_output = None
+from services.file_storage import save_filtered_output
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -72,10 +68,7 @@ def process_gateway_text(text: str, save=False, output_format="txt"):
     pii_result = process_pii(text, use_openai_privacy_filter=True)
     external_api_response = call_external_api(pii_result["masked_text"])
     log_saved = save_log(pii_result, external_api_response)
-    saved_file = None
-
-    if save and save_filtered_output is not None:
-        saved_file = save_filtered_output(pii_result, output_format)
+    saved_file = save_filtered_output(pii_result, output_format) if save else None
 
     return {
         "original_text": pii_result["original_text"],
@@ -163,4 +156,3 @@ def gateway_file():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
-
