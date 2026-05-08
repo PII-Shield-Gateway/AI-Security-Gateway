@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { filterText, saveFilteredText } from "./api/gatewayApi";
+import { filterText } from "./api/gatewayApi";
 import Header from "./components/Header";
 import SecurityFlow from "./components/SecurityFlow";
 import OriginalDocumentPanel from "./components/OriginalDocumentPanel";
@@ -8,6 +8,7 @@ import DetectionTable from "./components/DetectionTable";
 import SummaryCards from "./components/SummaryCards";
 import SecurityLog from "./components/SecurityLog";
 import sampleDocuments from "./data/sampleDocuments";
+import { downloadTextFile, makeTimestamp } from "./utils/downloadFile";
 
 const THEME_STORAGE_KEY = "theme";
 const INITIAL_EXTERNAL_API_RESPONSE =
@@ -44,9 +45,9 @@ function App() {
   const [outputFormat, setOutputFormat] = useState("txt");
   const [transferStatus, setTransferStatus] = useState("WAITING");
   const [gatewayStatus, setGatewayStatus] = useState("READY");
-  const [savedFile, setSavedFile] = useState(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveMessage, setSaveMessage] = useState("");
+  const [downloadedFile, setDownloadedFile] = useState(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadMessage, setDownloadMessage] = useState("");
   const [logSaved, setLogSaved] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -74,25 +75,28 @@ function App() {
     setOutputFormat("txt");
     setTransferStatus("WAITING");
     setGatewayStatus("READY");
-    setSavedFile(null);
-    setIsSaving(false);
-    setSaveMessage("");
+    setDownloadedFile(null);
+    setIsDownloading(false);
+    setDownloadMessage("");
     setLogSaved(false);
     setErrorMessage("");
     setIsLoading(false);
   }
 
+  function clearDownloadState() {
+    setDownloadedFile(null);
+    setDownloadMessage("");
+  }
+
   function handleSampleClick(sampleKey) {
     setSourceText(sampleDocuments[sampleKey] ?? "");
-    setSavedFile(null);
-    setSaveMessage("");
+    clearDownloadState();
     setErrorMessage("");
   }
 
   function handleSourceTextChange(value) {
     setSourceText(value);
-    setSavedFile(null);
-    setSaveMessage("");
+    clearDownloadState();
     setErrorMessage("");
   }
 
@@ -122,8 +126,7 @@ function App() {
     const reader = new FileReader();
     reader.onload = () => {
       setSourceText(typeof reader.result === "string" ? reader.result : "");
-      setSavedFile(null);
-      setSaveMessage("");
+      clearDownloadState();
       setErrorMessage("");
     };
     reader.onerror = () => {
@@ -157,8 +160,7 @@ function App() {
       setExternalApiResponse(
         result.external_api_response ?? INITIAL_EXTERNAL_API_RESPONSE
       );
-      setSavedFile(null);
-      setSaveMessage("");
+      clearDownloadState();
       setLogSaved(Boolean(result.log_saved));
       setTransferStatus("READY");
       setGatewayStatus("MASKED");
@@ -172,7 +174,7 @@ function App() {
     }
   }
 
-  async function handleSaveFilteredFile() {
+  async function handleDownloadFilteredFile() {
     if (!sourceText.trim()) {
       setErrorMessage("저장할 원본 자료가 없습니다.");
       return;
@@ -184,19 +186,40 @@ function App() {
     }
 
     setErrorMessage("");
-    setIsSaving(true);
+    setIsDownloading(true);
 
     try {
-      const result = await saveFilteredText(sourceText, outputFormat);
-      setSavedFile(result.saved_file ?? null);
-      setSaveMessage("필터링 결과가 파일로 저장되었습니다.");
-      setLogSaved(Boolean(result.log_saved));
+      if (outputFormat === "json") {
+        const payload = {
+          original_text: sourceText,
+          masked_text: maskedText,
+          detected_pii: detectedPii,
+          risk_level: riskLevel,
+          detections,
+          filter_engine: filterEngine,
+          downloaded_at: new Date().toISOString(),
+        };
+        const filename = `result_${makeTimestamp()}.json`;
+        downloadTextFile(
+          JSON.stringify(payload, null, 2),
+          filename,
+          "application/json;charset=utf-8"
+        );
+        setDownloadedFile({ format: "json", filename });
+      } else {
+        const filename = `masked_${makeTimestamp()}.txt`;
+        downloadTextFile(maskedText, filename, "text/plain;charset=utf-8");
+        setDownloadedFile({ format: "txt", filename });
+      }
+
+      setDownloadMessage("필터링 결과가 다운로드되었습니다.");
+      setLogSaved(true);
     } catch (error) {
       setErrorMessage(
-        "파일 저장 중 오류가 발생했습니다. 백엔드 서버가 실행 중인지 확인하세요."
+        "파일 다운로드 중 오류가 발생했습니다. 브라우저에서 다운로드가 차단되지 않았는지 확인하세요."
       );
     } finally {
-      setIsSaving(false);
+      setIsDownloading(false);
     }
   }
 
@@ -240,10 +263,10 @@ function App() {
             canSend={Boolean(maskedText)}
             outputFormat={outputFormat}
             onOutputFormatChange={setOutputFormat}
-            onSaveFilteredFile={handleSaveFilteredFile}
-            isSaving={isSaving}
-            savedFile={savedFile}
-            saveMessage={saveMessage}
+            onDownloadFilteredFile={handleDownloadFilteredFile}
+            isDownloading={isDownloading}
+            downloadedFile={downloadedFile}
+            downloadMessage={downloadMessage}
           />
         </div>
         <SummaryCards
@@ -259,8 +282,8 @@ function App() {
           gatewayStatus={gatewayStatus}
           externalApiResponse={externalApiResponse}
           filterEngine={filterEngine}
-          savedFile={savedFile}
-          saveMessage={saveMessage}
+          downloadedFile={downloadedFile}
+          downloadMessage={downloadMessage}
           logSaved={logSaved}
         />
       </div>

@@ -3,8 +3,8 @@ function SecurityLog({
   gatewayStatus = "READY",
   externalApiResponse = "보안 검사 후 외부 AI API 응답이 표시됩니다.",
   filterEngine = "READY",
-  savedFile = null,
-  saveMessage = "",
+  downloadedFile = null,
+  downloadMessage = "",
   logSaved = false,
 }) {
   return (
@@ -35,7 +35,7 @@ function SecurityLog({
         />
         <LogItem label="필터 엔진" value={filterEngine} tone="indigo" />
         <LogItem
-          label="외부 API 응답"
+          label="외부 AI 응답"
           value={externalApiResponse}
           tone="emerald"
           valueClassName="whitespace-pre-wrap break-words"
@@ -46,25 +46,20 @@ function SecurityLog({
           tone={logSaved ? "emerald" : "slate"}
         />
         <LogItem
-          label="저장 상태"
-          value={savedFile?.saved_file ? "SAVED" : "NOT SAVED"}
-          tone={savedFile?.saved_file ? "emerald" : "slate"}
+          label="다운로드 상태"
+          value={downloadedFile?.filename ? "DOWNLOADED" : "NOT DOWNLOADED"}
+          tone={downloadedFile?.filename ? "emerald" : "slate"}
         />
         <LogItem
-          label="저장 형식"
-          value={savedFile?.format ? String(savedFile.format).toUpperCase() : "-"}
-          tone={savedFile?.saved_file ? "blue" : "slate"}
-        />
-        <LogItem
-          label="저장 경로"
-          value={savedFile?.saved_file ?? "없음"}
-          tone={savedFile?.saved_file ? "emerald" : "slate"}
+          label="다운로드 파일"
+          value={downloadedFile?.filename ?? "없음"}
+          tone={downloadedFile?.filename ? "blue" : "slate"}
           valueClassName="whitespace-pre-wrap break-words"
         />
         <LogItem
-          label="저장 메시지"
-          value={saveMessage || "-"}
-          tone={savedFile?.saved_file ? "emerald" : "slate"}
+          label="다운로드 메시지"
+          value={downloadMessage || "-"}
+          tone={downloadedFile?.filename ? "emerald" : "slate"}
           valueClassName="whitespace-pre-wrap break-words"
         />
       </div>

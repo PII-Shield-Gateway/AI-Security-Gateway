@@ -5,10 +5,10 @@ function MaskedDocumentPanel({
   canSend = false,
   outputFormat = "txt",
   onOutputFormatChange = () => {},
-  onSaveFilteredFile = () => {},
-  isSaving = false,
-  savedFile = null,
-  saveMessage = "",
+  onDownloadFilteredFile = () => {},
+  isDownloading = false,
+  downloadedFile = null,
+  downloadMessage = "",
 }) {
   const statusLabel =
     transferStatus === "SENT"
@@ -63,7 +63,7 @@ function MaskedDocumentPanel({
       <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm ring-1 ring-slate-200/60 dark:border-slate-700 dark:bg-slate-950 dark:ring-slate-700/60">
         <div className="flex flex-wrap items-center gap-3">
           <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-            저장 형식
+            다운로드 형식
           </label>
           <select
             value={outputFormat}
@@ -75,21 +75,22 @@ function MaskedDocumentPanel({
           </select>
           <button
             type="button"
-            onClick={onSaveFilteredFile}
-            disabled={!maskedText || isSaving}
+            onClick={onDownloadFilteredFile}
+            disabled={!maskedText || isDownloading}
             className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-700"
           >
-            {isSaving ? "저장 중..." : "필터링 결과 저장"}
+            {isDownloading ? "다운로드 중..." : "필터링 결과 다운로드"}
           </button>
         </div>
       </div>
 
-      {savedFile?.saved_file ? (
+      {downloadedFile?.filename ? (
         <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 ring-1 ring-emerald-500/10 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300">
-          <div className="font-semibold">저장 완료</div>
-          {saveMessage ? <div className="mt-1">{saveMessage}</div> : null}
+          <div className="font-semibold">다운로드 완료</div>
+          {downloadMessage ? <div className="mt-1">{downloadMessage}</div> : null}
           <div className="mt-1 font-medium">
-            {String(savedFile.format || outputFormat).toUpperCase()} · {savedFile.saved_file}
+            {String(downloadedFile.format || outputFormat).toUpperCase()} 파일이 내
+            컴퓨터에 저장되었습니다.
           </div>
         </div>
       ) : null}
