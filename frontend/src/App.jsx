@@ -10,6 +10,8 @@ import SecurityLog from "./components/SecurityLog";
 import sampleDocuments from "./data/sampleDocuments";
 
 const THEME_STORAGE_KEY = "theme";
+const INITIAL_EXTERNAL_API_RESPONSE =
+  "보안 검사 후 외부 AI API 응답이 표시됩니다.";
 
 function getInitialDarkMode() {
   if (typeof window === "undefined") {
@@ -37,7 +39,7 @@ function App() {
   const [riskLevel, setRiskLevel] = useState("NONE");
   const [filterEngine, setFilterEngine] = useState("READY");
   const [externalApiResponse, setExternalApiResponse] = useState(
-    "보안 검사 후 외부 AI API 응답이 표시됩니다."
+    INITIAL_EXTERNAL_API_RESPONSE
   );
   const [transferStatus, setTransferStatus] = useState("WAITING");
   const [gatewayStatus, setGatewayStatus] = useState("READY");
@@ -94,6 +96,22 @@ function App() {
       setErrorMessage("TXT 파일을 읽는 중 오류가 발생했습니다.");
     };
     reader.readAsText(file);
+  }
+
+  function handleReset() {
+    setSourceText("");
+    setMaskedText("");
+    setDetectedPii([]);
+    setDetections([]);
+    setRiskLevel("NONE");
+    setFilterEngine("READY");
+    setExternalApiResponse(INITIAL_EXTERNAL_API_RESPONSE);
+    setTransferStatus("WAITING");
+    setGatewayStatus("READY");
+    setSavedFile(null);
+    setLogSaved(false);
+    setErrorMessage("");
+    setIsLoading(false);
   }
 
   async function handleRunCheck() {
@@ -158,6 +176,7 @@ function App() {
             onSampleClick={handleSampleClick}
             onTxtUpload={handleTxtUpload}
             onRunCheck={handleRunCheck}
+            onReset={handleReset}
             isLoading={isLoading}
             errorMessage={errorMessage}
           />
