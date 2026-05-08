@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Header from "./components/Header";
 import SecurityFlow from "./components/SecurityFlow";
+import OriginalDocumentPanel from "./components/OriginalDocumentPanel";
 
 const THEME_STORAGE_KEY = "theme";
 
@@ -45,6 +46,9 @@ function App() {
           onToggleDarkMode={() => setIsDarkMode((current) => !current)}
         />
         <SecurityFlow />
+        <div className="mt-6">
+          <OriginalDocumentPanel />
+        </div>
       </div>
     </main>
   );
