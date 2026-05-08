@@ -86,12 +86,14 @@ function OriginalDocumentPanel({
         </div>
       </div>
 
-      <div
-        className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-sm ring-1 ring-rose-500/10 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200"
-        role={errorMessage ? "alert" : undefined}
-      >
-        {errorMessage || "오류 메시지가 이곳에 표시됩니다."}
-      </div>
+      {errorMessage ? (
+        <div
+          className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-sm ring-1 ring-rose-500/10 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200"
+          role="alert"
+        >
+          {errorMessage}
+        </div>
+      ) : null}
     </section>
   );
 }
