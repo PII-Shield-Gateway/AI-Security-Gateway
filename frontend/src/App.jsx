@@ -27,6 +27,7 @@ function getInitialDarkMode() {
 function App() {
   const [isDarkMode, setIsDarkMode] = useState(getInitialDarkMode);
   const [sourceText, setSourceText] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     const root = document.documentElement;
@@ -43,6 +44,40 @@ function App() {
 
   function handleSampleClick(sampleKey) {
     setSourceText(sampleDocuments[sampleKey] ?? "");
+    setErrorMessage("");
+  }
+
+  function handleSourceTextChange(value) {
+    setSourceText(value);
+    setErrorMessage("");
+  }
+
+  function handleTxtUpload(event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    const isTxtFile =
+      file.name.toLowerCase().endsWith(".txt") ||
+      file.type === "text/plain";
+
+    if (!isTxtFile) {
+      setErrorMessage("TXT 파일만 업로드할 수 있습니다.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSourceText(typeof reader.result === "string" ? reader.result : "");
+      setErrorMessage("");
+    };
+    reader.onerror = () => {
+      setErrorMessage("TXT 파일을 읽는 중 오류가 발생했습니다.");
+    };
+    reader.readAsText(file);
   }
 
   return (
@@ -56,8 +91,10 @@ function App() {
         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
           <OriginalDocumentPanel
             sourceText={sourceText}
-            onSourceTextChange={setSourceText}
+            onSourceTextChange={handleSourceTextChange}
             onSampleClick={handleSampleClick}
+            onTxtUpload={handleTxtUpload}
+            errorMessage={errorMessage}
           />
           <MaskedDocumentPanel />
         </div>
