@@ -6,6 +6,7 @@ import OriginalDocumentPanel from "./components/OriginalDocumentPanel";
 import MaskedDocumentPanel from "./components/MaskedDocumentPanel";
 import DetectionTable from "./components/DetectionTable";
 import SummaryCards from "./components/SummaryCards";
+import SecurityLog from "./components/SecurityLog";
 import sampleDocuments from "./data/sampleDocuments";
 
 const THEME_STORAGE_KEY = "theme";
@@ -41,6 +42,7 @@ function App() {
   const [transferStatus, setTransferStatus] = useState("WAITING");
   const [gatewayStatus, setGatewayStatus] = useState("READY");
   const [savedFile, setSavedFile] = useState(null);
+  const [logSaved, setLogSaved] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -76,8 +78,7 @@ function App() {
     }
 
     const isTxtFile =
-      file.name.toLowerCase().endsWith(".txt") ||
-      file.type === "text/plain";
+      file.name.toLowerCase().endsWith(".txt") || file.type === "text/plain";
 
     if (!isTxtFile) {
       setErrorMessage("TXT 파일만 업로드할 수 있습니다.");
@@ -117,6 +118,7 @@ function App() {
           "보안 검사 후 외부 AI API 응답이 표시됩니다."
       );
       setSavedFile(result.saved_file ?? null);
+      setLogSaved(Boolean(result.log_saved));
       setTransferStatus("READY");
       setGatewayStatus("MASKED");
     } catch (error) {
@@ -162,6 +164,14 @@ function App() {
           filterEngine={filterEngine}
         />
         <DetectionTable detections={detections} />
+        <SecurityLog
+          transferStatus={transferStatus}
+          gatewayStatus={gatewayStatus}
+          externalApiResponse={externalApiResponse}
+          filterEngine={filterEngine}
+          savedFile={savedFile}
+          logSaved={logSaved}
+        />
       </div>
     </main>
   );
