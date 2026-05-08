@@ -41,6 +41,8 @@ function App() {
   const [externalApiResponse, setExternalApiResponse] = useState(
     INITIAL_EXTERNAL_API_RESPONSE
   );
+  const [saveResult, setSaveResult] = useState(false);
+  const [outputFormat, setOutputFormat] = useState("txt");
   const [transferStatus, setTransferStatus] = useState("WAITING");
   const [gatewayStatus, setGatewayStatus] = useState("READY");
   const [savedFile, setSavedFile] = useState(null);
@@ -68,6 +70,8 @@ function App() {
     setRiskLevel("NONE");
     setFilterEngine("READY");
     setExternalApiResponse(INITIAL_EXTERNAL_API_RESPONSE);
+    setSaveResult(false);
+    setOutputFormat("txt");
     setTransferStatus("WAITING");
     setGatewayStatus("READY");
     setSavedFile(null);
@@ -135,7 +139,10 @@ function App() {
     setGatewayStatus("SCANNING");
 
     try {
-      const result = await filterText(sourceText);
+      const result = await filterText(sourceText, {
+        save: saveResult,
+        outputFormat,
+      });
       setMaskedText(result.masked_text ?? "");
       setDetectedPii(Array.isArray(result.detected_pii) ? result.detected_pii : []);
       setDetections(Array.isArray(result.detections) ? result.detections : []);
@@ -149,7 +156,7 @@ function App() {
     } catch (error) {
       setGatewayStatus("ERROR");
       setErrorMessage(
-        "보안 검사 중 오류가 발생했습니다. 백엔드 서버가 실행 중인지 확인하세요."
+        "보안 검사 또는 파일 저장 중 오류가 발생했습니다. 백엔드 서버가 실행 중인지 확인하세요."
       );
     } finally {
       setIsLoading(false);
@@ -181,7 +188,11 @@ function App() {
             sourceText={sourceText}
             onSourceTextChange={handleSourceTextChange}
             onSampleClick={handleSampleClick}
-            onFileUpload={handleFileUpload}
+            onTxtUpload={handleFileUpload}
+            saveResult={saveResult}
+            outputFormat={outputFormat}
+            onSaveResultChange={setSaveResult}
+            onOutputFormatChange={setOutputFormat}
             onRunCheck={handleRunCheck}
             onReset={handleReset}
             isLoading={isLoading}

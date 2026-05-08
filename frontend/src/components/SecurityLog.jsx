@@ -45,6 +45,16 @@ function SecurityLog({
           tone={logSaved ? "emerald" : "slate"}
         />
         <LogItem
+          label="파일 저장 여부"
+          value={savedFile?.saved_file ? "SAVED" : "NOT SAVED"}
+          tone={savedFile?.saved_file ? "emerald" : "slate"}
+        />
+        <LogItem
+          label="저장 형식"
+          value={savedFile?.format ? String(savedFile.format).toUpperCase() : "-"}
+          tone={savedFile?.saved_file ? "blue" : "slate"}
+        />
+        <LogItem
           label="저장 파일 경로"
           value={savedFile?.saved_file ?? "없음"}
           tone={savedFile?.saved_file ? "emerald" : "slate"}

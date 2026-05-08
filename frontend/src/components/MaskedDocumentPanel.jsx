@@ -71,7 +71,12 @@ function MaskedDocumentPanel({
 
       {savedFile?.saved_file ? (
         <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 ring-1 ring-emerald-500/10 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200">
-          저장된 파일: {savedFile.saved_file}
+          <div className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-300">
+            저장 완료
+          </div>
+          <div className="mt-1 font-medium">
+            {String(savedFile.format || "").toUpperCase()} · {savedFile.saved_file}
+          </div>
         </div>
       ) : null}
     </section>
