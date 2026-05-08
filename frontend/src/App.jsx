@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Header from "./components/Header";
+import SecurityFlow from "./components/SecurityFlow";
 
 const THEME_STORAGE_KEY = "theme";
 
@@ -43,6 +44,7 @@ function App() {
           isDarkMode={isDarkMode}
           onToggleDarkMode={() => setIsDarkMode((current) => !current)}
         />
+        <SecurityFlow />
       </div>
     </main>
   );
