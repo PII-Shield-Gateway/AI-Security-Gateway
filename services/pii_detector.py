@@ -479,6 +479,42 @@ def _normalize_opf_detections(opf_result):
     return normalized
 
 
+def _sanitize_detection_value(text: str, detection: dict) -> dict | None:
+    if not isinstance(detection, dict):
+        return None
+
+    start = detection.get("start")
+    end = detection.get("end")
+    if start is None or end is None:
+        return None
+
+    try:
+        start = int(start)
+        end = int(end)
+    except (TypeError, ValueError):
+        return None
+
+    if start < 0 or end < 0 or start >= end or end > len(text):
+        return None
+
+    value = text[start:end]
+    sanitized = dict(detection)
+    sanitized["start"] = start
+    sanitized["end"] = end
+    sanitized["value"] = value
+    sanitized["type"] = str(sanitized.get("type", "PII")).upper()
+    return sanitized
+
+
+def _sanitize_detections(text: str, detections):
+    sanitized = []
+    for detection in detections or []:
+        normalized = _sanitize_detection_value(text, detection)
+        if normalized is not None:
+            sanitized.append(normalized)
+    return sanitized
+
+
 def refine_detection_type_by_context(text: str, detection: dict) -> dict:
     refined = dict(detection)
     if refined.get("type") != "ACCOUNT":
@@ -520,7 +556,7 @@ def process_pii(text: str, use_openai_privacy_filter=True):
         refine_detection_type_by_context(original_text, detection)
         for detection in (opf_detections + regex_detections)
     ]
-    combined_detections = remove_overlaps(refined_detections)
+    combined_detections = _sanitize_detections(original_text, remove_overlaps(refined_detections))
     masked_text = mask_text(original_text, combined_detections)
     detected_pii = _unique_types_in_order(combined_detections)
     risk_level = _calculate_risk_level(detected_pii)
