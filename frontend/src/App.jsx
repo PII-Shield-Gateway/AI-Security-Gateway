@@ -4,6 +4,7 @@ import Header from "./components/Header";
 import SecurityFlow from "./components/SecurityFlow";
 import OriginalDocumentPanel from "./components/OriginalDocumentPanel";
 import MaskedDocumentPanel from "./components/MaskedDocumentPanel";
+import SummaryCards from "./components/SummaryCards";
 import sampleDocuments from "./data/sampleDocuments";
 
 const THEME_STORAGE_KEY = "theme";
@@ -152,6 +153,13 @@ function App() {
             canSend={Boolean(maskedText)}
           />
         </div>
+        <SummaryCards
+          riskLevel={riskLevel}
+          detections={detections}
+          detectedPii={detectedPii}
+          transferStatus={transferStatus}
+          filterEngine={filterEngine}
+        />
       </div>
     </main>
   );
