@@ -112,6 +112,7 @@ URL_PATTERN = re.compile(
     r"(?<![A-Za-z0-9])(?:https?://|www\.)[^\s<>()\"']+[^\s<>().,!?;:]", re.IGNORECASE
 )
 
+# Email/phone patterns avoid \b so Korean particles after the value do not block detection.
 EMAIL_PATTERN = re.compile(
     r"(?<![A-Za-z0-9._%+-])"
     r"[A-Za-z0-9._%+-]+"
@@ -121,12 +122,8 @@ EMAIL_PATTERN = re.compile(
     r"(?![A-Za-z0-9._%+-])"
 )
 
-PHONE_PATTERN = re.compile(
-    r"(?<!\d)(?:01[016789])[ -]?\d{3,4}[ -]?\d{4}(?!\d)"
-)
-
+PHONE_PATTERN = re.compile(r"(?<!\d)(?:01[016789])[ -]?\d{3,4}[ -]?\d{4}(?!\d)")
 RRN_PATTERN = re.compile(r"(?<!\d)\d{6}[- ]?\d{7}(?!\d)")
-
 CARD_PATTERN = re.compile(r"(?<!\d)(?:\d{4}[ -]?){3}\d{4}(?!\d)")
 
 ACCOUNT_PATTERN = re.compile(
@@ -134,16 +131,23 @@ ACCOUNT_PATTERN = re.compile(
 )
 
 SECRET_LABEL_PATTERNS = [
-    re.compile(r"(?i)(?:password|pass|pw)\s*[:=：]\s*([^\s,;\"']{2,})"),
-    re.compile(r"(?:비밀번호|비번|패스워드)\s*[:=：]?\s*([^\s,;\"']{2,})"),
-    re.compile(r"(?i)api[_-]?key\s*[:=：]\s*([^\s,;\"']{4,})"),
-    re.compile(r"(?i)secret\s*[:=：]\s*([^\s,;\"']{2,})"),
+    re.compile(r"(?i)(?:password|pass|pw)\s*[:=：]?\s*([^\s,;\"'`]{2,})"),
+    re.compile(r"(?:비밀번호|비번|패스워드)\s*[:=：]?\s*([^\s,;\"'`]{2,})"),
+    re.compile(r"(?i)api[_-]?key\s*[:=：]?\s*([^\s,;\"'`]{4,})"),
+    re.compile(r"(?i)secret\s*[:=：]?\s*([^\s,;\"'`]{2,})"),
+    re.compile(r"(?i)token\s*[:=：]?\s*([^\s,;\"'`]{4,})"),
     re.compile(r"sk-[A-Za-z0-9_-]{8,}"),
 ]
 
 PHONE_LABEL_PATTERN = re.compile(
     r"(?:전화번호|휴대폰|핸드폰|연락처|번호)\s*[:=：]?\s*((?:01[016789])[ -]?\d{3,4}[ -]?\d{4})"
 )
+
+LABEL_KEYWORDS = {
+    "PHONE": ("전화번호", "휴대폰", "핸드폰", "연락처", "번호"),
+    "SECRET": ("비밀번호", "비번", "패스워드", "password", "pw"),
+    "ACCOUNT": ("계좌", "계좌번호", "account", "acct", "account_number"),
+}
 
 
 def make_detection(type, value, start, end, score=1.0, source="regex"):
@@ -157,12 +161,23 @@ def make_detection(type, value, start, end, score=1.0, source="regex"):
     }
 
 
-def _iter_pattern_matches(pattern: re.Pattern[str], text: str, pii_type: str, source: str = "regex", score: float = 1.0):
+def _iter_pattern_matches(
+    pattern: re.Pattern[str],
+    text: str,
+    pii_type: str,
+    source: str = "regex",
+    score: float = 1.0,
+):
     detections = []
     for match in pattern.finditer(text):
-        value = match.group(1) if match.groups() else match.group(0)
-        start = match.start(1) if match.groups() else match.start()
-        end = match.end(1) if match.groups() else match.end()
+        if match.groups():
+            value = match.group(1)
+            start = match.start(1)
+            end = match.end(1)
+        else:
+            value = match.group(0)
+            start = match.start()
+            end = match.end()
         detections.append(make_detection(pii_type, value, start, end, score=score, source=source))
     return detections
 
@@ -188,9 +203,7 @@ def detect_card(text: str):
 def detect_name(text: str):
     detections = []
     for name in KOREAN_NAME_DICTIONARY:
-        pattern = re.compile(
-            rf"(?<![가-힣A-Za-z0-9]){re.escape(name)}(?![가-힣A-Za-z0-9])"
-        )
+        pattern = re.compile(rf"(?<![가-힣A-Za-z0-9]){re.escape(name)}(?![가-힣A-Za-z0-9])")
         detections.extend(_iter_pattern_matches(pattern, text, "NAME"))
     return detections
 
@@ -199,27 +212,26 @@ def detect_address(text: str):
     detections = []
     keywords = sorted(set(ADDRESS_KEYWORDS), key=len, reverse=True)
     offset = 0
+
     for line in text.splitlines(True):
         line_text = line.rstrip("\r\n")
-        earliest = None
-        matched_keyword = None
+        line_start = None
         for keyword in keywords:
             idx = line_text.find(keyword)
             if idx == -1:
                 continue
-            if earliest is None or idx < earliest:
-                earliest = idx
-                matched_keyword = keyword
-        if matched_keyword is None:
+            if line_start is None or idx < line_start:
+                line_start = idx
+        if line_start is None:
             offset += len(line)
             continue
-        start = offset + earliest
+
+        start = offset + line_start
         end = offset + len(line_text)
         if start < end:
-            detections.append(
-                make_detection("ADDRESS", text[start:end], start, end, score=0.9)
-            )
+            detections.append(make_detection("ADDRESS", text[start:end], start, end, score=0.9))
         offset += len(line)
+
     return detections
 
 
@@ -227,8 +239,7 @@ def detect_secret(text: str):
     detections = []
     for pattern in SECRET_LABEL_PATTERNS:
         detections.extend(_iter_pattern_matches(pattern, text, "SECRET"))
-    for pattern in [ACCOUNT_PATTERN]:
-        detections.extend(_iter_pattern_matches(pattern, text, "ACCOUNT"))
+    detections.extend(_iter_pattern_matches(ACCOUNT_PATTERN, text, "ACCOUNT"))
     return detections
 
 
@@ -495,3 +506,4 @@ def process_pii(text: str, use_openai_privacy_filter=True):
         "detections": combined_detections,
         "filter_engine": filter_engine,
     }
+
