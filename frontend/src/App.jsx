@@ -189,10 +189,6 @@ function App() {
             onSourceTextChange={handleSourceTextChange}
             onSampleClick={handleSampleClick}
             onTxtUpload={handleFileUpload}
-            saveResult={saveResult}
-            outputFormat={outputFormat}
-            onSaveResultChange={setSaveResult}
-            onOutputFormatChange={setOutputFormat}
             onRunCheck={handleRunCheck}
             onReset={handleReset}
             isLoading={isLoading}
@@ -204,6 +200,10 @@ function App() {
             onSendExternal={handleSendExternal}
             canSend={Boolean(maskedText)}
             savedFile={savedFile}
+            saveResult={saveResult}
+            outputFormat={outputFormat}
+            onSaveResultChange={setSaveResult}
+            onOutputFormatChange={setOutputFormat}
           />
         </div>
         <SummaryCards

@@ -5,10 +5,6 @@ function OriginalDocumentPanel({
   onSourceTextChange = () => {},
   onSampleClick = () => {},
   onTxtUpload = () => {},
-  saveResult = false,
-  outputFormat = "txt",
-  onSaveResultChange = () => {},
-  onOutputFormatChange = () => {},
   onRunCheck = () => {},
   onReset = () => {},
   isLoading = false,
@@ -93,37 +89,6 @@ function OriginalDocumentPanel({
           <span className="max-w-64 truncate text-sm text-slate-500 dark:text-slate-400">
             {selectedFileName || "선택된 파일 없음"}
           </span>
-        </div>
-      </div>
-
-      <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm ring-1 ring-slate-200/60 dark:border-slate-700 dark:bg-slate-950 dark:ring-slate-700/60">
-        <label className="flex items-center gap-3 text-sm font-medium text-slate-700 dark:text-slate-200">
-          <input
-            type="checkbox"
-            checked={saveResult}
-            onChange={(event) => onSaveResultChange(event.target.checked)}
-            className="h-4 w-4 rounded border-slate-300 accent-blue-600"
-          />
-          필터링 결과 파일로 저장
-        </label>
-
-        <div
-          className={`mt-4 flex flex-wrap items-center gap-3 ${
-            saveResult ? "" : "opacity-50"
-          }`}
-        >
-          <span className="text-sm text-slate-600 dark:text-slate-300">
-            저장 형식
-          </span>
-          <select
-            value={outputFormat}
-            onChange={(event) => onOutputFormatChange(event.target.value)}
-            disabled={!saveResult}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm ring-1 ring-slate-200/60 transition-colors duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:cursor-not-allowed dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:ring-slate-700/60"
-          >
-            <option value="txt">TXT</option>
-            <option value="json">JSON</option>
-          </select>
         </div>
       </div>
 
