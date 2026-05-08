@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { filterText } from "./api/gatewayApi";
 import Header from "./components/Header";
 import SecurityFlow from "./components/SecurityFlow";
 import OriginalDocumentPanel from "./components/OriginalDocumentPanel";
@@ -27,7 +28,19 @@ function getInitialDarkMode() {
 function App() {
   const [isDarkMode, setIsDarkMode] = useState(getInitialDarkMode);
   const [sourceText, setSourceText] = useState("");
+  const [maskedText, setMaskedText] = useState("");
+  const [detectedPii, setDetectedPii] = useState([]);
+  const [detections, setDetections] = useState([]);
+  const [riskLevel, setRiskLevel] = useState("NONE");
+  const [filterEngine, setFilterEngine] = useState("READY");
+  const [externalApiResponse, setExternalApiResponse] = useState(
+    "보안 검사 후 외부 AI API 응답이 표시됩니다."
+  );
+  const [transferStatus, setTransferStatus] = useState("WAITING");
+  const [gatewayStatus, setGatewayStatus] = useState("READY");
+  const [savedFile, setSavedFile] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -80,6 +93,40 @@ function App() {
     reader.readAsText(file);
   }
 
+  async function handleRunCheck() {
+    if (!sourceText.trim()) {
+      setErrorMessage("자료를 입력하세요.");
+      return;
+    }
+
+    setErrorMessage("");
+    setIsLoading(true);
+    setGatewayStatus("SCANNING");
+
+    try {
+      const result = await filterText(sourceText);
+      setMaskedText(result.masked_text ?? "");
+      setDetectedPii(Array.isArray(result.detected_pii) ? result.detected_pii : []);
+      setDetections(Array.isArray(result.detections) ? result.detections : []);
+      setRiskLevel(result.risk_level ?? "NONE");
+      setFilterEngine(result.filter_engine ?? "READY");
+      setExternalApiResponse(
+        result.external_api_response ??
+          "보안 검사 후 외부 AI API 응답이 표시됩니다."
+      );
+      setSavedFile(result.saved_file ?? null);
+      setTransferStatus("READY");
+      setGatewayStatus("MASKED");
+    } catch (error) {
+      setGatewayStatus("ERROR");
+      setErrorMessage(
+        "보안 검사 중 오류가 발생했습니다. 백엔드 서버가 실행 중인지 확인하세요."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-6 text-slate-900 transition-colors duration-200 dark:bg-slate-950 dark:text-slate-100 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
@@ -94,9 +141,16 @@ function App() {
             onSourceTextChange={handleSourceTextChange}
             onSampleClick={handleSampleClick}
             onTxtUpload={handleTxtUpload}
+            onRunCheck={handleRunCheck}
+            isLoading={isLoading}
             errorMessage={errorMessage}
           />
-          <MaskedDocumentPanel />
+          <MaskedDocumentPanel
+            maskedText={maskedText}
+            transferStatus={transferStatus}
+            savedFile={savedFile}
+            canSend={Boolean(maskedText)}
+          />
         </div>
       </div>
     </main>
