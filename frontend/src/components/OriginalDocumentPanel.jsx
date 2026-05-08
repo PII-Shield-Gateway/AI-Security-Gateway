@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 function OriginalDocumentPanel({
   sourceText = "",
   onSourceTextChange = () => {},
@@ -8,6 +10,14 @@ function OriginalDocumentPanel({
   isLoading = false,
   errorMessage = "",
 }) {
+  const [selectedFileName, setSelectedFileName] = useState("");
+
+  function handleFileUpload(event) {
+    const file = event.target.files?.[0];
+    setSelectedFileName(file?.name ?? "");
+    onTxtUpload(event);
+  }
+
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm ring-1 ring-slate-200/60 transition-colors duration-200 dark:border-slate-800 dark:bg-slate-900 dark:ring-slate-800/80 sm:p-8">
       <div className="flex flex-col gap-2">
@@ -55,35 +65,50 @@ function OriginalDocumentPanel({
         <PresetButton label="코드/API Key 예시" onClick={() => onSampleClick("code")} />
       </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        <label className="flex cursor-pointer flex-col gap-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600 transition-colors duration-200 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800/60">
-          <span className="font-medium text-slate-700 dark:text-slate-200">TXT 파일 업로드</span>
-          <span>TXT 파일만 업로드할 수 있습니다.</span>
+      <div className="mt-6">
+        <p className="mb-3 text-sm font-semibold text-slate-800 dark:text-slate-100">
+          TXT 파일 업로드
+        </p>
+
+        <div className="flex flex-wrap items-center gap-3">
           <input
+            id="source-file-upload"
             type="file"
             accept=".txt,text/plain"
-            onChange={onTxtUpload}
+            onChange={handleFileUpload}
             className="sr-only"
           />
-        </label>
 
-        <div className="flex flex-col gap-3 sm:items-end sm:justify-end">
-          <button
-            type="button"
-            onClick={onRunCheck}
-            disabled={isLoading}
-            className="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm ring-1 ring-blue-500/20 transition-colors duration-200 hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-slate-300 dark:bg-blue-500 dark:hover:bg-blue-400 dark:disabled:bg-slate-700"
+          <label
+            htmlFor="source-file-upload"
+            className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm ring-1 ring-blue-500/20 transition-colors duration-200 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:bg-blue-500 dark:hover:bg-blue-400"
           >
-            {isLoading ? "검사 중..." : "보안 검사 실행"}
-          </button>
-          <button
-            type="button"
-            onClick={onReset}
-            className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200/60 transition-colors duration-200 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:ring-slate-700/60 dark:hover:bg-slate-800"
-          >
-            초기화
-          </button>
+            파일 선택
+          </label>
+
+          <span className="max-w-64 truncate text-sm text-slate-500 dark:text-slate-400">
+            {selectedFileName || "선택된 파일 없음"}
+          </span>
         </div>
+      </div>
+
+      <div className="mt-8 flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={onRunCheck}
+          disabled={isLoading}
+          className="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm ring-1 ring-blue-500/20 transition-colors duration-200 hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-slate-300 dark:bg-blue-500 dark:hover:bg-blue-400 dark:disabled:bg-slate-700"
+        >
+          {isLoading ? "검사 중..." : "보안 검사 실행"}
+        </button>
+
+        <button
+          type="button"
+          onClick={onReset}
+          className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200/60 transition-colors duration-200 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:ring-slate-700/60 dark:hover:bg-slate-800"
+        >
+          초기화
+        </button>
       </div>
 
       {errorMessage ? (

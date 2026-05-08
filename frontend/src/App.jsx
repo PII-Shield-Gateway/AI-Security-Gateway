@@ -86,7 +86,7 @@ function App() {
     setErrorMessage("");
   }
 
-  function handleTxtUpload(event) {
+  function handleFileUpload(event) {
     const file = event.target.files?.[0];
     event.target.value = "";
 
@@ -96,9 +96,15 @@ function App() {
 
     const isTxtFile =
       file.name.toLowerCase().endsWith(".txt") || file.type === "text/plain";
+    const isPdfFile =
+      file.name.toLowerCase().endsWith(".pdf") || file.type === "application/pdf";
+    const isDocxFile =
+      file.name.toLowerCase().endsWith(".docx") ||
+      file.type ===
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
-    if (!isTxtFile) {
-      setErrorMessage("TXT 파일만 업로드할 수 있습니다.");
+    if (!isTxtFile && !isPdfFile && !isDocxFile) {
+      setErrorMessage("TXT, PDF, DOCX 파일만 업로드할 수 있습니다.");
       return;
     }
 
@@ -175,7 +181,7 @@ function App() {
             sourceText={sourceText}
             onSourceTextChange={handleSourceTextChange}
             onSampleClick={handleSampleClick}
-            onTxtUpload={handleTxtUpload}
+            onFileUpload={handleFileUpload}
             onRunCheck={handleRunCheck}
             onReset={handleReset}
             isLoading={isLoading}
