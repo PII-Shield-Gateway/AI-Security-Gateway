@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import services.pii_detector as pii_detector
 
@@ -66,6 +66,26 @@ def test_detect_secret():
     assert result["masked_text"] == "비밀번호 : [SECRET]"
     assert result["detected_pii"] == ["SECRET"]
     assert result["risk_level"] == "CRITICAL"
+
+
+def test_detect_secret_assignment_values_only():
+    text = (
+        'const apiKey = "sk-test-1234567890abcdef";\n'
+        'const password = "admin1234";\n'
+        'const userEmail = "developer@company.com";\n'
+        'const phone = "010-3313-0478";'
+    )
+    result = pii_detector.process_pii(text, use_openai_privacy_filter=False)
+
+    assert result["masked_text"] == (
+        'const apiKey = "[SECRET]";\n'
+        'const password = "[SECRET]";\n'
+        'const userEmail = "[EMAIL]";\n'
+        'const phone = "[PHONE]";'
+    )
+    assert "SECRET" in result["detected_pii"]
+    assert "EMAIL" in result["detected_pii"]
+    assert "PHONE" in result["detected_pii"]
 
 
 def test_hybrid_merges_opf_and_regex(monkeypatch):

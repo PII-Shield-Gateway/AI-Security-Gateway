@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import re
 from typing import Any
@@ -131,11 +131,9 @@ ACCOUNT_PATTERN = re.compile(
 )
 
 SECRET_LABEL_PATTERNS = [
-    re.compile(r"(?i)(?:password|pass|pw)\s*[:=：]?\s*([^\s,;\"'`]{2,})"),
-    re.compile(r"(?:비밀번호|비번|패스워드)\s*[:=：]?\s*([^\s,;\"'`]{2,})"),
-    re.compile(r"(?i)api[_-]?key\s*[:=：]?\s*([^\s,;\"'`]{4,})"),
-    re.compile(r"(?i)secret\s*[:=：]?\s*([^\s,;\"'`]{2,})"),
-    re.compile(r"(?i)token\s*[:=：]?\s*([^\s,;\"'`]{4,})"),
+    re.compile(
+        r'(?i)(?:비밀번호|비번|패스워드|password|pass|pw|api[_-]?key|secret|token)\b\s*[:=：]\s*(?:"([^"]+)"|\'([^\']+)\'|`([^`]+)`|([^\s,;]+))'
+    ),
     re.compile(r"sk-[A-Za-z0-9_-]{8,}"),
 ]
 
@@ -171,9 +169,17 @@ def _iter_pattern_matches(
     detections = []
     for match in pattern.finditer(text):
         if match.groups():
-            value = match.group(1)
-            start = match.start(1)
-            end = match.end(1)
+            value = None
+            start = None
+            end = None
+            for group_index in range(1, len(match.groups()) + 1):
+                if match.group(group_index) is not None:
+                    value = match.group(group_index)
+                    start = match.start(group_index)
+                    end = match.end(group_index)
+                    break
+            if value is None or start is None or end is None:
+                continue
         else:
             value = match.group(0)
             start = match.start()
