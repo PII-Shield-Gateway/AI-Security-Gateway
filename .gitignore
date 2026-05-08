@@ -1,7 +1,11 @@
 # Node / React
+node_modules/
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
+
+# Generated outputs
+outputs/
 
 # Logs
 *.log
@@ -19,6 +23,8 @@ yarn-error.log*
 # Python
 __pycache__/
 *.pyc
+venv/
+backend/venv/
 
 # OS / Editor
 .DS_Store
