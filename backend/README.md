@@ -25,8 +25,8 @@ python run.py
 
 | 변수 | 기본값 | 설명 |
 | --- | --- | --- |
-| `EXTERNAL_API_MODE` | `mock` | `mock` 또는 `http` |
-| `EXTERNAL_API_URL` | (빈 값) | `http` 모드일 때 호출 대상 URL |
+| `EXTERNAL_API_MODE` | `http` | `http`만 지원 |
+| `EXTERNAL_API_URL` | (필수) | 외부 API 호출 대상 URL |
 | `EXTERNAL_API_TIMEOUT` | `10` | 외부 API 타임아웃(초) |
 | `LOG_DIR` | `backend\logs` | 로그 저장 디렉터리 |
 
@@ -50,23 +50,34 @@ python run.py
   "timestamp": "2026-05-08T10:00:00+00:00",
   "original_text": "홍길동 전화번호는 010-1234-5678, 이메일은 test@example.com 입니다.",
   "masked_text": "[NAME] 전화번호는 [PHONE], 이메일은 [EMAIL] 입니다.",
-  "detected_pii": [
+  "detections": [
     {
       "type": "NAME",
       "value": "홍길동",
       "start": 0,
       "end": 3,
-      "source": "ner-mock"
+      "source": "regex-name"
     }
+  ],
+  "detected_pii": [
+    "NAME",
+    "PHONE",
+    "EMAIL"
   ],
   "risk_level": "HIGH",
   "masked": true,
+  "filter_engine": "REGEX",
+  "external_api_response": "{\"result\":\"processed\"}",
+  "log_saved": true,
+  "saved_file": {
+    "saved_file": "C:\\AI-Security-Gateway\\backend\\logs\\gateway.log"
+  },
   "external_api": {
-    "provider": "mock",
+    "provider": "configured-http",
+    "status_code": 200,
     "request_text": "[NAME] 전화번호는 [PHONE], 이메일은 [EMAIL] 입니다.",
     "response": {
-      "message": "mock external api response",
-      "echo": "[NAME] 전화번호는 [PHONE], 이메일은 [EMAIL] 입니다."
+      "result": "processed"
     }
   }
 }

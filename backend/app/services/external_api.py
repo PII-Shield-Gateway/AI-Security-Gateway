@@ -15,11 +15,8 @@ class ExternalApiClient:
 
     def call(self, masked_text: str) -> dict:
         mode = self.config["EXTERNAL_API_MODE"]
-        if mode == "mock":
-            return self._mock_response(masked_text)
-
         if mode != "http":
-            raise ExternalApiError("EXTERNAL_API_MODE는 'mock' 또는 'http' 이어야 합니다.")
+            raise ExternalApiError("EXTERNAL_API_MODE는 'http'만 지원합니다.")
 
         url = self.config["EXTERNAL_API_URL"]
         if not url:
@@ -41,22 +38,12 @@ class ExternalApiClient:
 
         try:
             data = response.json()
-        except ValueError as error:
-            raise ExternalApiError("외부 API 응답이 JSON 형식이 아닙니다.") from error
+        except ValueError:
+            data = response.text
 
         return {
             "provider": "configured-http",
+            "status_code": response.status_code,
             "request_text": masked_text,
             "response": data,
-        }
-
-    @staticmethod
-    def _mock_response(masked_text: str) -> dict:
-        return {
-            "provider": "mock",
-            "request_text": masked_text,
-            "response": {
-                "message": "mock external api response",
-                "echo": masked_text,
-            },
         }

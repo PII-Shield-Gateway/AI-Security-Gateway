@@ -5,7 +5,7 @@ from pathlib import Path
 
 
 class Config:
-    EXTERNAL_API_MODE = os.getenv("EXTERNAL_API_MODE", "mock").lower()
+    EXTERNAL_API_MODE = os.getenv("EXTERNAL_API_MODE", "http").lower()
     EXTERNAL_API_URL = os.getenv("EXTERNAL_API_URL", "").strip()
     EXTERNAL_API_TIMEOUT = float(os.getenv("EXTERNAL_API_TIMEOUT", "10"))
 

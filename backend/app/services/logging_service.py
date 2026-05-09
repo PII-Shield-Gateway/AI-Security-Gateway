@@ -24,9 +24,22 @@ def init_gateway_logger(app) -> None:
 
 def log_gateway_event(app, result: dict) -> None:
     logger = app.extensions["gateway_logger"]
+    detections = result.get("detections", [])
+    detected_types = []
+    for item in detections:
+        if isinstance(item, dict) and "type" in item:
+            detected_types.append(item["type"])
+
+    if not detected_types:
+        for item in result.get("detected_pii", []):
+            if isinstance(item, dict) and "type" in item:
+                detected_types.append(item["type"])
+            elif isinstance(item, str):
+                detected_types.append(item)
+
     event = {
         "timestamp": result.get("timestamp"),
-        "detected_pii": [item["type"] for item in result.get("detected_pii", [])],
+        "detected_pii": detected_types,
         "risk_level": result.get("risk_level"),
         "masked": result.get("masked"),
     }
