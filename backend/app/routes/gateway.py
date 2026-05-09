@@ -29,6 +29,8 @@ def gateway_text():
         return jsonify({"success": False, "error": str(error)}), 502
 
     log_gateway_event(current_app, result)
+    result["log_saved"] = True
+    result["saved_file"] = {"saved_file": str(current_app.config["LOG_FILE"])}
     return jsonify(result), 200
 
 
@@ -69,5 +71,7 @@ def gateway_upload_txt():
         "filename": uploaded_file.filename,
     }
     log_gateway_event(current_app, result)
+    result["log_saved"] = True
+    result["saved_file"] = {"saved_file": str(current_app.config["LOG_FILE"])}
 
     return jsonify(result), 200
