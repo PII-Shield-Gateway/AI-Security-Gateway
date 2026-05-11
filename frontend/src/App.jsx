@@ -14,6 +14,17 @@ const THEME_STORAGE_KEY = "theme";
 const INITIAL_EXTERNAL_API_RESPONSE =
   "외부 AI API 응답은 비식별화된 자료가 전송된 뒤에 표시됩니다.";
 
+function getMaskedText(data) {
+  return (
+    data?.masked_text ||
+    data?.maskedText ||
+    data?.filtered_text ||
+    data?.sanitized_text ||
+    data?.masked ||
+    ""
+  );
+}
+
 function getInitialDarkMode() {
   if (typeof window === "undefined") {
     return false;
@@ -32,9 +43,11 @@ function getInitialDarkMode() {
 }
 
 function normalizeResult(data = {}) {
+  const maskedText = getMaskedText(data);
+
   return {
     original_text: data.original_text ?? "",
-    masked_text: data.masked_text ?? "",
+    masked_text: maskedText,
     detected_pii: Array.isArray(data.detected_pii) ? data.detected_pii : [],
     detections: Array.isArray(data.detections) ? data.detections : [],
     risk_level: data.risk_level ?? "NONE",
@@ -213,6 +226,8 @@ function App() {
 
     try {
       const result = await filterText(sourceText);
+      console.log("Gateway API response:", result);
+      console.log("Available response keys:", Object.keys(result));
       applyResult(result);
     } catch (error) {
       setGatewayStatus("ERROR");
@@ -276,16 +291,22 @@ function App() {
 
   function handleSendExternal() {
     const result = currentResult || { masked_text: maskedText };
-    if (!result?.masked_text) {
-      window.alert("먼저 보안 검사를 실행하세요.");
+    const currentMaskedText = getMaskedText(result);
+
+    if (!currentMaskedText) {
+      window.alert("마스킹 결과가 있을 때만 전송할 수 있습니다.");
       return;
     }
 
     setErrorMessage("");
     setTransferStatus("SENT");
     setGatewayStatus("SENT");
-    setExternalApiResponse(
-      "외부 AI API에는 비식별화된 자료만 전송되었습니다."
+    const responseMessage = "외부 AI API에는 비식별화된 자료만 전송되었습니다.";
+    setExternalApiResponse(responseMessage);
+    setCurrentResult((previousResult) =>
+      previousResult
+        ? { ...previousResult, external_api_response: responseMessage }
+        : previousResult
     );
   }
 
