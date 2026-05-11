@@ -12,7 +12,7 @@ import { downloadTextFile, makeTimestamp } from "./utils/downloadFile";
 
 const THEME_STORAGE_KEY = "theme";
 const INITIAL_EXTERNAL_API_RESPONSE =
-  "보안 검사 후 외부 AI API 응답이 표시됩니다.";
+  "외부 AI API 응답은 비식별화된 자료가 전송된 뒤에 표시됩니다.";
 
 function getInitialDarkMode() {
   if (typeof window === "undefined") {
@@ -31,6 +31,21 @@ function getInitialDarkMode() {
   return window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false;
 }
 
+function normalizeResult(data = {}) {
+  return {
+    original_text: data.original_text ?? "",
+    masked_text: data.masked_text ?? "",
+    detected_pii: Array.isArray(data.detected_pii) ? data.detected_pii : [],
+    detections: Array.isArray(data.detections) ? data.detections : [],
+    risk_level: data.risk_level ?? "NONE",
+    filter_engine: data.filter_engine ?? "READY",
+    external_api_response:
+      data.external_api_response ?? INITIAL_EXTERNAL_API_RESPONSE,
+    timestamp: data.timestamp ?? "측정 예정",
+    log_saved: Boolean(data.log_saved),
+  };
+}
+
 function App() {
   const [isDarkMode, setIsDarkMode] = useState(getInitialDarkMode);
   const [sourceText, setSourceText] = useState("");
@@ -43,7 +58,7 @@ function App() {
     INITIAL_EXTERNAL_API_RESPONSE
   );
   const [outputFormat, setOutputFormat] = useState("txt");
-  const [transferStatus, setTransferStatus] = useState("WAITING");
+  const [transferStatus, setTransferStatus] = useState("PENDING");
   const [gatewayStatus, setGatewayStatus] = useState("READY");
   const [downloadedFile, setDownloadedFile] = useState(null);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -51,6 +66,8 @@ function App() {
   const [logSaved, setLogSaved] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [currentResult, setCurrentResult] = useState(null);
+  const [timestamp, setTimestamp] = useState("측정 예정");
 
   useEffect(() => {
     const root = document.documentElement;
@@ -65,6 +82,47 @@ function App() {
     window.localStorage.setItem(THEME_STORAGE_KEY, "light");
   }, [isDarkMode]);
 
+  useEffect(() => {
+    window.dashboardBridge = {
+      sendToExternalAIAction: handleSendExternal,
+      getCurrentResult: () => currentResult,
+      getState: () => ({
+        externalApiResponse,
+        timestamp,
+        detectedPii,
+        riskLevel,
+        transferStatus,
+      }),
+      showCriticalWarning: (message) => setErrorMessage(message),
+    };
+
+    return () => {
+      delete window.dashboardBridge;
+    };
+  }, [currentResult, detectedPii, externalApiResponse, riskLevel, timestamp, transferStatus]);
+
+  useEffect(() => {
+    window.dashboardState?.updateSecurityLog?.();
+  }, [transferStatus, externalApiResponse, detectedPii, riskLevel, timestamp]);
+
+  function applyResult(rawData) {
+    const data = normalizeResult(rawData);
+
+    setCurrentResult(data);
+    setMaskedText(data.masked_text);
+    setDetectedPii(data.detected_pii);
+    setDetections(data.detections);
+    setRiskLevel(data.risk_level);
+    setFilterEngine(data.filter_engine);
+    setExternalApiResponse(data.external_api_response);
+    setTimestamp(data.timestamp);
+    setLogSaved(data.log_saved);
+    setTransferStatus("READY");
+    setGatewayStatus("MASKED");
+    clearDownloadState();
+    window.dashboardState?.renderResult?.(data);
+  }
+
   function resetAnalysisState() {
     setMaskedText("");
     setDetectedPii([]);
@@ -73,7 +131,7 @@ function App() {
     setFilterEngine("READY");
     setExternalApiResponse(INITIAL_EXTERNAL_API_RESPONSE);
     setOutputFormat("txt");
-    setTransferStatus("WAITING");
+    setTransferStatus("PENDING");
     setGatewayStatus("READY");
     setDownloadedFile(null);
     setIsDownloading(false);
@@ -81,6 +139,9 @@ function App() {
     setLogSaved(false);
     setErrorMessage("");
     setIsLoading(false);
+    setCurrentResult(null);
+    setTimestamp("측정 예정");
+    window.dashboardState?.resetDashboard?.();
   }
 
   function clearDownloadState() {
@@ -152,20 +213,10 @@ function App() {
 
     try {
       const result = await filterText(sourceText);
-      setMaskedText(result.masked_text ?? "");
-      setDetectedPii(Array.isArray(result.detected_pii) ? result.detected_pii : []);
-      setDetections(Array.isArray(result.detections) ? result.detections : []);
-      setRiskLevel(result.risk_level ?? "NONE");
-      setFilterEngine(result.filter_engine ?? "READY");
-      setExternalApiResponse(
-        result.external_api_response ?? INITIAL_EXTERNAL_API_RESPONSE
-      );
-      clearDownloadState();
-      setLogSaved(Boolean(result.log_saved));
-      setTransferStatus("READY");
-      setGatewayStatus("MASKED");
+      applyResult(result);
     } catch (error) {
       setGatewayStatus("ERROR");
+      setTransferStatus("PENDING");
       setErrorMessage(
         "보안 검사 중 오류가 발생했습니다. 백엔드 서버가 실행 중인지 확인하세요."
       );
@@ -224,8 +275,9 @@ function App() {
   }
 
   function handleSendExternal() {
-    if (!maskedText) {
-      setErrorMessage("먼저 보안 검사를 실행하세요.");
+    const result = currentResult || { masked_text: maskedText };
+    if (!result?.masked_text) {
+      window.alert("먼저 보안 검사를 실행하세요.");
       return;
     }
 
@@ -259,14 +311,15 @@ function App() {
           <MaskedDocumentPanel
             maskedText={maskedText}
             transferStatus={transferStatus}
-            onSendExternal={handleSendExternal}
-            canSend={Boolean(maskedText)}
+            onSendExternal={() => {}}
+            canSend={Boolean(maskedText) && riskLevel !== "CRITICAL"}
             outputFormat={outputFormat}
             onOutputFormatChange={setOutputFormat}
             onDownloadFilteredFile={handleDownloadFilteredFile}
             isDownloading={isDownloading}
             downloadedFile={downloadedFile}
             downloadMessage={downloadMessage}
+            riskLevel={riskLevel}
           />
         </div>
         <SummaryCards
@@ -285,6 +338,9 @@ function App() {
           downloadedFile={downloadedFile}
           downloadMessage={downloadMessage}
           logSaved={logSaved}
+          detectedPii={detectedPii}
+          riskLevel={riskLevel}
+          timestamp={timestamp}
         />
       </div>
     </main>
