@@ -19,13 +19,13 @@ const sampleDocuments = {
 카드번호: 1234-5678-9012-3456
 이메일: contract@company.com
 
-계약 내용을 요약해줘.`,
+계약 내용을 요약해 주세요.`,
   code: `const apiKey = "sk-test-1234567890abcdef";
 const password = "admin1234";
 const userEmail = "developer@company.com";
 const phone = "010-3313-0478";
 
-이 코드를 외부 AI에게 설명해줘.`,
+이 코드를 외부 AI에게 설명해 주세요.`,
 };
 
 export default sampleDocuments;

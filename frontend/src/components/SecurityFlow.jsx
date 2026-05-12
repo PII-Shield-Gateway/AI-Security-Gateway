@@ -1,23 +1,23 @@
 const steps = [
   {
-    title: "원본 입력",
-    description: "내부 문서는 검사 전용으로만 사용되고 외부 AI API 전송은 차단됩니다.",
+    title: "보안 검사",
+    description: "내부 원본 자료에서 개인정보와 민감정보를 탐지합니다.",
     tone: "rose",
   },
   {
-    title: "탐지 및 마스킹",
-    description: "PII와 사용자 맞춤형 필터를 탐지해 [NAME_1] 같은 고유 토큰으로 변환합니다.",
+    title: "마스킹 결과 확인",
+    description: "탐지 값을 토큰화하고 masked_text 상태를 READY로 전환합니다.",
     tone: "indigo",
   },
   {
-    title: "안전 전송",
-    description: "외부 전송 버튼은 항상 masked_text만 사용합니다.",
-    tone: "emerald",
+    title: "복구 및 다운로드",
+    description: "복구 결과는 INTERNAL ONLY로 분리하고 파일로 내보냅니다.",
+    tone: "amber",
   },
   {
-    title: "내부 복구",
-    description: "tokenMap 기반 복구는 내부 검토용이며 외부 전송과 분리됩니다.",
-    tone: "amber",
+    title: "외부 전송",
+    description: "외부 AI API에는 비식별화된 masked_text만 전송합니다.",
+    tone: "emerald",
   },
 ];
 
@@ -30,25 +30,27 @@ const tones = {
 
 function SecurityFlow() {
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm ring-1 ring-slate-200/70 dark:border-slate-800 dark:bg-slate-900 dark:ring-slate-800/80">
-      <div className="mb-5 flex flex-col gap-1">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
-          Security Flow
-        </p>
-        <h2 className="text-xl font-semibold">데이터 상태 분리</h2>
+    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm ring-1 ring-slate-200/70 dark:border-slate-800 dark:bg-slate-900 dark:ring-slate-800/80">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
+            Security Flow
+          </p>
+          <h2 className="mt-1 text-lg font-semibold">보안 처리 흐름</h2>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
         {steps.map((step, index) => (
           <article
             key={step.title}
-            className={`rounded-2xl border p-4 shadow-sm ${tones[step.tone]}`}
+            className={`rounded-xl border p-3 shadow-sm ${tones[step.tone]}`}
           >
-            <div className="text-xs font-semibold uppercase tracking-[0.18em]">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.14em]">
               Step {index + 1}
             </div>
-            <h3 className="mt-3 text-base font-semibold">{step.title}</h3>
-            <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+            <h3 className="mt-2 text-sm font-semibold">{step.title}</h3>
+            <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">
               {step.description}
             </p>
           </article>
