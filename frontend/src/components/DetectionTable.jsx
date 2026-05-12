@@ -1,21 +1,15 @@
 import { getPiiTypeBadgeClasses } from "../utils/badgeStyles";
 
 function DetectionTable({ detections = [] }) {
-  if (!Array.isArray(detections) || detections.length === 0) {
-    return null;
-  }
-
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm ring-1 ring-slate-200/60 transition-colors duration-200 dark:border-slate-800 dark:bg-slate-900 dark:ring-slate-800/80 sm:p-8">
-      <div className="mb-5 flex flex-col gap-2">
+    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm ring-1 ring-slate-200/70 dark:border-slate-800 dark:bg-slate-900 dark:ring-slate-800/80">
+      <div className="mb-5 flex flex-col gap-1">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
           Detection Details
         </p>
-        <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
-          PII 탐지 상세
-        </h2>
+        <h2 className="text-xl font-semibold">탐지 상세 결과</h2>
         <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
-          데모에서는 탐지 값을 표시하지만, 실제 운영 환경에서는 원본 개인정보 값을 로그에 저장하지 않는 것이 권장됩니다.
+          데모 테이블에는 value를 표시하지만, 다운로드되는 보안 로그에는 value를 제외합니다.
         </p>
       </div>
 
@@ -26,35 +20,35 @@ function DetectionTable({ detections = [] }) {
               <tr>
                 <Th>유형</Th>
                 <Th>탐지 값</Th>
-                <Th>시작 위치</Th>
-                <Th>끝 위치</Th>
-                <Th>탐지 엔진</Th>
+                <Th>시작</Th>
+                <Th>끝</Th>
+                <Th>엔진</Th>
+                <Th>처리</Th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-950">
-              {detections.map((detection, index) => (
-                <tr key={`${detection.type}-${detection.start}-${index}`}>
-                  <Td>
-                    <span
-                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ${getPiiTypeBadgeClasses(
-                        detection.type
-                      )}`}
-                    >
-                      {detection.type}
-                    </span>
-                  </Td>
-                  <Td className="font-medium text-slate-700 dark:text-slate-200">
-                    {detection.value}
-                  </Td>
-                  <Td>{detection.start}</Td>
-                  <Td>{detection.end}</Td>
-                  <Td>
-                    <span className="inline-flex items-center rounded-full bg-slate-500/10 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-500/20 dark:text-slate-300">
-                      {detection.source}
-                    </span>
-                  </Td>
+              {detections.length === 0 ? (
+                <tr>
+                  <Td colSpan={6}>탐지 결과가 없습니다.</Td>
                 </tr>
-              ))}
+              ) : (
+                detections.map((detection, index) => (
+                  <tr key={`${detection.type}-${detection.start}-${index}`}>
+                    <Td>
+                      <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ${getPiiTypeBadgeClasses(detection.type)}`}>
+                        {detection.type}
+                      </span>
+                    </Td>
+                    <Td className="font-medium text-slate-700 dark:text-slate-200">
+                      {detection.value || "-"}
+                    </Td>
+                    <Td>{detection.start}</Td>
+                    <Td>{detection.end}</Td>
+                    <Td>{detection.engine || detection.source || "gateway_detector"}</Td>
+                    <Td>{detection.action || "MASKED"}</Td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -71,9 +65,9 @@ function Th({ children }) {
   );
 }
 
-function Td({ children, className = "" }) {
+function Td({ children, className = "", colSpan }) {
   return (
-    <td className={`px-4 py-4 text-sm text-slate-600 dark:text-slate-300 ${className}`}>
+    <td colSpan={colSpan} className={`px-4 py-4 text-sm text-slate-600 dark:text-slate-300 ${className}`}>
       {children}
     </td>
   );

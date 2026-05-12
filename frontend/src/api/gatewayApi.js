@@ -8,6 +8,8 @@ export async function filterText(text, options = {}) {
     },
     body: JSON.stringify({
       text,
+      policy: options.policy,
+      custom_policy: options.customPolicy,
       save: options.save ?? false,
       output_format: options.outputFormat ?? "txt",
     }),

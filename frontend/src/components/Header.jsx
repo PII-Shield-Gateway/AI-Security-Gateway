@@ -1,40 +1,29 @@
 import DarkModeToggle from "./DarkModeToggle";
 
-const featureBadges = [
-  "PII Detection",
-  "Masking",
-  "Risk Analysis",
-  "Safe External API Call",
-  "OPF + Regex Hybrid",
-];
-
 function Header({ isDarkMode, onToggleDarkMode }) {
   return (
-    <header className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm ring-1 ring-slate-200/60 transition-colors duration-200 dark:border-slate-800 dark:bg-slate-900 dark:ring-slate-800/80 sm:p-8">
+    <header className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm ring-1 ring-slate-200/70 dark:border-slate-800 dark:bg-slate-900 dark:ring-slate-800/80 sm:p-8">
       <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
         <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-sm ring-1 ring-blue-500/20 dark:bg-blue-500">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-sm dark:bg-indigo-500">
             <ShieldLockIcon />
           </div>
-
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <p className="text-sm font-medium uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400">
-                AI Security Gateway
-              </p>
-              <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-                AI Security Gateway
-              </h1>
-              <p className="max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-300 sm:text-base">
-                외부 AI API 호출 전 기업 내부 자료의 개인정보를 자동 탐지하고 마스킹합니다.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {featureBadges.map((badge) => (
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-indigo-700 dark:text-indigo-300">
+              AI Security Gateway
+            </p>
+            <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
+              AI Security Gateway
+            </h1>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-300 sm:text-base">
+              외부 AI API 호출 전 개인정보와 민감정보를 필터링합니다.
+              원본 데이터는 차단하고 비식별화된 자료만 전송 대상으로 분리합니다.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {["PII Detection", "Unique Token Masking", "Internal Restore", "Custom Policy"].map((badge) => (
                 <span
                   key={badge}
-                  className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 shadow-sm ring-1 ring-slate-200/60 transition-colors duration-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700/70"
+                  className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                 >
                   {badge}
                 </span>
@@ -43,13 +32,14 @@ function Header({ isDarkMode, onToggleDarkMode }) {
           </div>
         </div>
 
-        <div className="flex flex-col items-start gap-3 xl:items-end">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-500/20 dark:bg-emerald-500/15 dark:text-emerald-300">
-              Gateway Active
-            </span>
-            <DarkModeToggle isDarkMode={isDarkMode} onToggle={onToggleDarkMode} />
-          </div>
+        <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+          <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-500/20 dark:text-emerald-300">
+            Gateway Active
+          </span>
+          <span className="inline-flex items-center rounded-full bg-rose-500/10 px-3 py-1 text-xs font-semibold text-rose-700 ring-1 ring-rose-500/20 dark:text-rose-300">
+            Original BLOCKED
+          </span>
+          <DarkModeToggle isDarkMode={isDarkMode} onToggle={onToggleDarkMode} />
         </div>
       </div>
     </header>
