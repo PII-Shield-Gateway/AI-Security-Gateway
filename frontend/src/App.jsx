@@ -27,6 +27,45 @@ const DEFAULT_POLICY = {
   block_card: true,
 };
 
+const DASHBOARD_NAV_ITEMS = [
+  {
+    key: "overview",
+    label: "Overview",
+    description: "분석 요약",
+    sectionId: "overview-section",
+  },
+  {
+    key: "inspect",
+    label: "Inspect",
+    description: "문서 검사",
+    sectionId: "inspect-section",
+  },
+  {
+    key: "policies",
+    label: "Policies",
+    description: "보안 정책",
+    sectionId: "policies-section",
+  },
+  {
+    key: "restore",
+    label: "Restore",
+    description: "마스킹 복구",
+    sectionId: "restore-section",
+  },
+  {
+    key: "exports",
+    label: "Exports",
+    description: "파일 내보내기",
+    sectionId: "exports-section",
+  },
+  {
+    key: "audit",
+    label: "Audit",
+    description: "보안 로그",
+    sectionId: "audit-section",
+  },
+];
+
 function getInitialDarkMode() {
   if (typeof window === "undefined") return false;
   const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
@@ -87,7 +126,6 @@ function normalizeResult(data = {}, inputText = "") {
   const detections = Array.isArray(data.detections)
     ? data.detections.map(normalizeDetection)
     : [];
-  const timestamp = data.timestamp || new Date().toLocaleString();
 
   return {
     original_text: data.original_text || inputText || "",
@@ -98,7 +136,7 @@ function normalizeResult(data = {}, inputText = "") {
     filter_engine: data.filter_engine || "gateway_detector",
     external_api_response:
       data.external_api_response || INITIAL_EXTERNAL_API_RESPONSE,
-    timestamp,
+    timestamp: data.timestamp || new Date().toLocaleString(),
     latency_ms: data.latency_ms ?? "측정 예정",
     log_saved: Boolean(data.log_saved),
   };
@@ -238,9 +276,7 @@ function App() {
   const [detections, setDetections] = useState([]);
   const [riskLevel, setRiskLevel] = useState("NONE");
   const [filterEngine, setFilterEngine] = useState("gateway_detector");
-  const [externalApiResponse, setExternalApiResponse] = useState(
-    INITIAL_EXTERNAL_API_RESPONSE
-  );
+  const [externalApiResponse, setExternalApiResponse] = useState(INITIAL_EXTERNAL_API_RESPONSE);
   const [transferStatus, setTransferStatus] = useState("PENDING");
   const [gatewayStatus, setGatewayStatus] = useState("READY");
   const [downloadedFile, setDownloadedFile] = useState(null);
@@ -252,6 +288,7 @@ function App() {
   const [timestamp, setTimestamp] = useState(new Date().toLocaleString());
   const [latencyMs, setLatencyMs] = useState("측정 예정");
   const [customFilters, setCustomFilters] = useState([]);
+  const [activeMenu, setActiveMenu] = useState("overview");
 
   const safeDetections = useMemo(
     () => detections.map(({ value, ...rest }) => rest),
@@ -269,6 +306,57 @@ function App() {
     root.classList.remove("dark");
     window.localStorage.setItem(THEME_STORAGE_KEY, "light");
   }, [isDarkMode]);
+
+  useEffect(() => {
+    const sectionElements = DASHBOARD_NAV_ITEMS.map((item) => ({
+      ...item,
+      element: document.getElementById(item.sectionId),
+    })).filter((item) => item.element);
+
+    if (sectionElements.length === 0) return undefined;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visibleEntry = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+
+        if (!visibleEntry) return;
+
+        const matchedItem = sectionElements.find(
+          (item) => item.sectionId === visibleEntry.target.id
+        );
+        if (matchedItem) {
+          setActiveMenu(matchedItem.key);
+        }
+      },
+      {
+        root: null,
+        rootMargin: "-96px 0px -60% 0px",
+        threshold: [0.1, 0.25, 0.5],
+      }
+    );
+
+    sectionElements.forEach((item) => observer.observe(item.element));
+
+    return () => observer.disconnect();
+  }, []);
+
+  function handleSidebarNavigation(menuKey, sectionId) {
+    setActiveMenu(menuKey);
+
+    const target = document.getElementById(sectionId);
+    if (target) {
+      target.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+
+    if (typeof window !== "undefined") {
+      window.history.replaceState(null, "", `#${sectionId}`);
+    }
+  }
 
   function clearDownloadState() {
     setDownloadedFile(null);
@@ -397,9 +485,7 @@ function App() {
     } catch (error) {
       setGatewayStatus("ERROR");
       setTransferStatus("PENDING");
-      setErrorMessage(
-        "보안 검사 중 오류가 발생했습니다. 백엔드 서버가 실행 중인지 확인하세요."
-      );
+      setErrorMessage("보안 검사 중 오류가 발생했습니다. 백엔드 서버가 실행 중인지 확인하세요.");
     } finally {
       setIsLoading(false);
     }
@@ -485,8 +571,7 @@ function App() {
     setErrorMessage("");
     setTransferStatus("SENT");
     setGatewayStatus("SENT");
-    const responseMessage =
-      "외부 AI API에는 비식별화된 masked_text만 전송되었습니다.";
+    const responseMessage = "외부 AI API에는 비식별화된 masked_text만 전송했습니다.";
     setExternalApiResponse(responseMessage);
     setCurrentResult((previousResult) =>
       previousResult
@@ -496,87 +581,215 @@ function App() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 px-4 py-6 text-slate-900 transition-colors duration-200 dark:bg-slate-950 dark:text-slate-100 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <Header
-          isDarkMode={isDarkMode}
-          onToggleDarkMode={() => setIsDarkMode((current) => !current)}
-        />
-        <SecurityFlow />
-
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <OriginalDocumentPanel
-            sourceText={sourceText}
-            onSourceTextChange={handleSourceTextChange}
-            onSampleClick={handleSampleClick}
-            onTxtUpload={handleFileUpload}
-            onRunCheck={handleRunCheck}
-            onReset={handleReset}
-            isLoading={isLoading}
-            errorMessage={errorMessage}
-          />
-          <MaskedDocumentPanel
-            maskedText={maskedText}
-            transferStatus={transferStatus}
-            onSendExternal={handleSendExternal}
-            canSend={Boolean(maskedText) && riskLevel !== "CRITICAL"}
-            onDownloadMaskedTxt={handleDownloadMaskedTxt}
-            onDownloadMaskedJson={handleDownloadMaskedJson}
-            riskLevel={riskLevel}
-          />
-        </div>
-
-        <SummaryCards
+    <main className="min-h-screen bg-slate-100 text-slate-900 transition-colors duration-200 dark:bg-slate-950 dark:text-slate-100">
+      <div className="flex min-h-screen flex-col lg:flex-row">
+        <DashboardSidebar
           riskLevel={riskLevel}
-          detections={detections}
-          detectedPii={detectedPii}
           transferStatus={transferStatus}
-          filterEngine={filterEngine}
+          detectionCount={detections.length}
+          customFilterCount={customFilters.length}
+          activeMenu={activeMenu}
+          onNavigate={handleSidebarNavigation}
         />
 
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-          <CustomFilterBuilder
-            customFilters={customFilters}
-            onCustomFiltersChange={setCustomFilters}
-          />
-          <RestorationPanel
-            maskedText={maskedText}
-            restoredText={restoredText}
-            tokenMap={tokenMap}
-            onRestore={handleRestore}
-            onDownloadRestoredTxt={handleDownloadRestoredTxt}
-          />
-          <ExportPanel
-            maskedText={maskedText}
-            restoredText={restoredText}
-            onDownloadMaskedTxt={handleDownloadMaskedTxt}
-            onDownloadMaskedJson={handleDownloadMaskedJson}
-            onDownloadRestoredTxt={handleDownloadRestoredTxt}
-            onDownloadSecurityLogJson={handleDownloadSecurityLogJson}
-            downloadedFile={downloadedFile}
-            downloadMessage={downloadMessage}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-          <DetectionTable detections={detections} />
-          <SecurityLog
-            transferStatus={transferStatus}
+        <div className="min-w-0 flex-1">
+          <Header
+            isDarkMode={isDarkMode}
+            onToggleDarkMode={() => setIsDarkMode((current) => !current)}
             gatewayStatus={gatewayStatus}
-            externalApiResponse={externalApiResponse}
-            filterEngine={filterEngine}
-            downloadedFile={downloadedFile}
-            downloadMessage={downloadMessage}
-            logSaved={logSaved}
-            detectedPii={detectedPii}
-            riskLevel={riskLevel}
             timestamp={timestamp}
-            latencyMs={latencyMs}
-            restoredText={restoredText}
           />
+
+          <div className="space-y-5 px-4 pb-8 pt-4 sm:px-5 lg:px-6">
+            <section id="overview-section" className="scroll-mt-24">
+              <SectionHeading eyebrow="Overview" title="분석 요약" />
+              <SummaryCards
+                riskLevel={riskLevel}
+                detections={detections}
+                detectedPii={detectedPii}
+                transferStatus={transferStatus}
+                filterEngine={filterEngine}
+              />
+            </section>
+
+            <section id="inspect-section" className="scroll-mt-24">
+              <SectionHeading eyebrow="Inspect" title="문서 검사" />
+              <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.05fr_0.95fr]">
+                <OriginalDocumentPanel
+                  sourceText={sourceText}
+                  onSourceTextChange={handleSourceTextChange}
+                  onSampleClick={handleSampleClick}
+                  onTxtUpload={handleFileUpload}
+                  onRunCheck={handleRunCheck}
+                  onReset={handleReset}
+                  isLoading={isLoading}
+                  errorMessage={errorMessage}
+                />
+                <MaskedDocumentPanel
+                  maskedText={maskedText}
+                  transferStatus={transferStatus}
+                  onSendExternal={handleSendExternal}
+                  canSend={Boolean(maskedText) && riskLevel !== "CRITICAL"}
+                  onDownloadMaskedTxt={handleDownloadMaskedTxt}
+                  onDownloadMaskedJson={handleDownloadMaskedJson}
+                  riskLevel={riskLevel}
+                />
+              </div>
+            </section>
+
+            <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.15fr_0.95fr] 2xl:grid-cols-[1.2fr_0.9fr_0.7fr]">
+              <section id="policies-section" className="scroll-mt-24">
+                <SectionHeading eyebrow="Policies" title="보안 정책 및 커스텀 필터" />
+                <CustomFilterBuilder
+                  customFilters={customFilters}
+                  onCustomFiltersChange={setCustomFilters}
+                />
+              </section>
+              <section id="restore-section" className="scroll-mt-24">
+                <SectionHeading eyebrow="Restore" title="마스킹 복구" />
+                <RestorationPanel
+                  maskedText={maskedText}
+                  restoredText={restoredText}
+                  tokenMap={tokenMap}
+                  onRestore={handleRestore}
+                  onDownloadRestoredTxt={handleDownloadRestoredTxt}
+                />
+              </section>
+              <section id="exports-section" className="scroll-mt-24">
+                <SectionHeading eyebrow="Exports" title="파일 내보내기" />
+                <ExportPanel
+                  maskedText={maskedText}
+                  restoredText={restoredText}
+                  onDownloadMaskedTxt={handleDownloadMaskedTxt}
+                  onDownloadMaskedJson={handleDownloadMaskedJson}
+                  onDownloadRestoredTxt={handleDownloadRestoredTxt}
+                  onDownloadSecurityLogJson={handleDownloadSecurityLogJson}
+                  downloadedFile={downloadedFile}
+                  downloadMessage={downloadMessage}
+                />
+              </section>
+            </div>
+
+            <section id="audit-section" className="scroll-mt-24">
+              <SectionHeading eyebrow="Audit" title="탐지 상세 및 보안 로그" />
+              <div className="grid grid-cols-1 gap-5 2xl:grid-cols-[1.35fr_0.65fr]">
+                <DetectionTable detections={detections} />
+                <SecurityLog
+                  transferStatus={transferStatus}
+                  gatewayStatus={gatewayStatus}
+                  externalApiResponse={externalApiResponse}
+                  filterEngine={filterEngine}
+                  downloadedFile={downloadedFile}
+                  downloadMessage={downloadMessage}
+                  logSaved={logSaved}
+                  detectedPii={detectedPii}
+                  riskLevel={riskLevel}
+                  timestamp={timestamp}
+                  latencyMs={latencyMs}
+                  restoredText={restoredText}
+                  onDownloadSecurityLogJson={handleDownloadSecurityLogJson}
+                />
+              </div>
+            </section>
+
+            <SecurityFlow />
+          </div>
         </div>
       </div>
     </main>
+  );
+}
+
+function DashboardSidebar({
+  riskLevel,
+  transferStatus,
+  detectionCount,
+  customFilterCount,
+  activeMenu = "overview",
+  onNavigate = () => {},
+}) {
+  const navItems = [
+    ["Overview", "대시보드"],
+    ["Inspect", "보안 검사"],
+    ["Policies", "정책 설정"],
+    ["Restore", "내부 복구"],
+    ["Exports", "다운로드"],
+    ["Audit", "보안 로그"],
+  ];
+
+  return (
+    <aside className="border-b border-slate-200 bg-slate-950 px-4 py-4 text-white shadow-xl lg:sticky lg:top-0 lg:h-screen lg:w-60 lg:border-b-0 lg:border-r lg:border-slate-800">
+      <div className="flex items-center gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500 text-sm font-black">
+          AI
+        </div>
+        <div>
+          <p className="text-sm font-semibold">AI Security Gateway</p>
+          <p className="text-xs text-slate-400">Enterprise Console</p>
+        </div>
+      </div>
+
+      <nav className="mt-6 grid grid-cols-2 gap-2 lg:grid-cols-1">
+        {DASHBOARD_NAV_ITEMS.map((item) => (
+          <button
+            key={item.key}
+            type="button"
+            onClick={() => onNavigate(item.key, item.sectionId)}
+            className={`rounded-xl px-3 py-2.5 text-left transition-colors ${
+              activeMenu === item.key
+                ? "bg-white/10 text-white ring-1 ring-white/10"
+                : "text-slate-300 hover:bg-white/5"
+            }`}
+          >
+            <div className="text-sm font-semibold">{item.label}</div>
+            <div className="mt-0.5 text-xs text-slate-400">{item.description}</div>
+          </button>
+        ))}
+      </nav>
+
+      <div className="mt-6 grid grid-cols-2 gap-2 lg:grid-cols-1">
+        <SidebarMetric label="Risk Level" value={riskLevel} tone={riskLevel === "CRITICAL" ? "red" : "green"} />
+        <SidebarMetric label="Detections" value={`${detectionCount} items`} />
+        <SidebarMetric label="Masked Text" value={transferStatus} tone="green" />
+        <SidebarMetric label="Custom Filters" value={`${customFilterCount} active`} />
+      </div>
+
+      <div className="mt-6 rounded-xl border border-amber-400/20 bg-amber-400/10 p-3 text-xs leading-5 text-amber-100">
+        복구 데이터는 내부 검토용이며 외부 전송 대상이 아닙니다.
+      </div>
+    </aside>
+  );
+}
+
+function SectionHeading({ eyebrow, title }) {
+  return (
+    <div className="mb-3 flex items-center gap-2">
+      <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
+        {eyebrow}
+      </span>
+      <span className="h-1 w-1 rounded-full bg-slate-300 dark:bg-slate-700" />
+      <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+        {title}
+      </h2>
+    </div>
+  );
+}
+
+function SidebarMetric({ label, value, tone = "slate" }) {
+  const toneClass =
+    tone === "red"
+      ? "text-rose-200"
+      : tone === "green"
+        ? "text-emerald-200"
+        : "text-slate-100";
+
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.06] p-3">
+      <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-slate-400">
+        {label}
+      </p>
+      <p className={`mt-1 text-base font-semibold ${toneClass}`}>{value}</p>
+    </div>
   );
 }
 
